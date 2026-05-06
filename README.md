@@ -125,7 +125,7 @@ See `src/technologies/redis/README.md` for more details.
 - **Image**: redis/redis-stack (includes all modules)
 
 ### PostgreSQL
-- **Port**: 5432
+- **Port**: 5433
 - **User**: demo / demo
 - **Database**: ecommerce
 - **Image**: postgres:16-alpine
@@ -148,7 +148,7 @@ docker ps
 Services use these ports by default:
 - 6379 (Redis)
 - 8001 (RedisInsight)
-- 5432 (PostgreSQL)
+- 5433 (PostgreSQL)
 
 To customize, create a `.env` file:
 
