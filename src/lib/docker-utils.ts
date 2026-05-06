@@ -54,8 +54,15 @@ export class DockerUtils {
       },
     ];
 
+    // Map display names to actual docker-compose service names
+    const serviceNameMap: Record<string, string> = {
+      'Redis': 'redis',
+      'PostgreSQL': 'postgres',
+      'RedisInsight': 'redis-insight',
+    };
+
     for (const service of services) {
-      const serviceName = service.name.toLowerCase().replace(/\s+/g, '-');
+      const serviceName = serviceNameMap[service.name];
       service.healthy = await this.waitForService(serviceName, 5000);
     }
 
