@@ -42,6 +42,13 @@ import { partitioningExample } from './technologies/kafka/examples/02-partitioni
 
 // Import all DynamoDB examples
 import { basicsExample as dynamoBasicsExample } from './technologies/dynamodb/examples/01-basics/index.js';
+import { indexingExample as dynamoIndexingExample } from './technologies/dynamodb/examples/02-indexing/index.js';
+import { consistencyExample } from './technologies/dynamodb/examples/03-consistency-models/index.js';
+import { transactionsExample as dynamoTransactionsExample } from './technologies/dynamodb/examples/04-transactions/index.js';
+import { singleTableExample } from './technologies/dynamodb/examples/05-single-table-design/index.js';
+import { streamsExample } from './technologies/dynamodb/examples/06-streams/index.js';
+import { performanceExample } from './technologies/dynamodb/examples/07-performance/index.js';
+import { productionExample } from './technologies/dynamodb/examples/08-production-patterns/index.js';
 
 const REDIS_EXAMPLES: RedisExample[] = [
   basicsExample,
@@ -73,6 +80,13 @@ const KAFKA_EXAMPLES: Example[] = [
 
 const DYNAMODB_EXAMPLES: DynamoDBExample[] = [
   dynamoBasicsExample,
+  dynamoIndexingExample,
+  consistencyExample,
+  dynamoTransactionsExample,
+  singleTableExample,
+  streamsExample,
+  performanceExample,
+  productionExample,
 ];
 
 class CLI {
@@ -251,7 +265,7 @@ class CLI {
           value: 'postgresql',
         },
         {
-          name: '⚡ DynamoDB (1 example)',
+          name: '⚡ DynamoDB (8 examples)',
           value: 'dynamodb',
         },
         {
