@@ -121,7 +121,7 @@ export const complexQueriesExample = {
         query: {
           bool: {
             must: [
-              { match: { description: 'technology' } },
+              { match: { description: 'guide examples' } },
             ],
             filter: [
               { term: { in_stock: true } },
@@ -138,7 +138,7 @@ export const complexQueriesExample = {
     logger.command('GET /books/_search', JSON.stringify({
       query: {
         bool: {
-          must: [{ match: { description: 'technology' } }],
+          must: [{ match: { description: 'guide examples' } }],
           filter: [
             { term: { in_stock: true } },
             { range: { price: { lte: 50 } } },
@@ -257,8 +257,8 @@ export const complexQueriesExample = {
               { range: { price: { gte: 30, lte: 60 } } },
             ],
             should: [
-              { match: { description: 'system' } },
-              { match: { description: 'code' } },
+              { match: { description: 'systems' } },
+              { match: { description: 'software' } },
             ],
             minimum_should_match: 1,
           },

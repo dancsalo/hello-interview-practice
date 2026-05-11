@@ -221,7 +221,7 @@ export const sortingPaginationExample = {
         query: { match_all: {} },
         sort: [
           { sales: { order: 'desc' } },
-          { _id: { order: 'asc' } },
+          { author: { order: 'asc' } },
         ],
         size: 3,
       },
@@ -229,7 +229,7 @@ export const sortingPaginationExample = {
     logger.command('GET /books/_search', JSON.stringify({
       sort: [
         { sales: { order: 'desc' } },
-        { _id: { order: 'asc' } },
+        { author: { order: 'asc' } },
       ],
       size: 3,
     }, null, 2));
@@ -246,7 +246,7 @@ export const sortingPaginationExample = {
         query: { match_all: {} },
         sort: [
           { sales: { order: 'desc' } },
-          { _id: { order: 'asc' } },
+          { author: { order: 'asc' } },
         ],
         search_after: lastHit.sort,
         size: 3,
@@ -272,7 +272,7 @@ export const sortingPaginationExample = {
     const pitPage1 = await client.search({
       body: {
         query: { match_all: {} },
-        sort: [{ title: { order: 'asc' } }],
+        sort: [{ 'title.keyword': { order: 'asc' } }],
         size: 3,
         pit: {
           id: pitId,

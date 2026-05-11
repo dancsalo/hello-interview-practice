@@ -8,6 +8,7 @@
     "dev": "tsx watch src/cli.ts",
     "test": "tsx scripts/test-redis-examples.ts",
     "test:redis": "tsx scripts/test-redis-examples.ts",
+    "test:elasticsearch": "tsx scripts/test-elasticsearch-examples.ts",
     "test:watch": "NON_INTERACTIVE=true tsx watch scripts/test-redis-examples.ts",
     "reset": "npm run reset:redis && npm run reset:elasticsearch",
     "reset:redis": "tsx scripts/reset-redis.ts",
@@ -32,7 +33,8 @@
     "@types/pg": "^8.11.6",
     "prettier": "^3.3.2",
     "tsx": "^4.15.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "vitest": "^4.1.6"
   },
   "engines": {
     "node": ">=18.0.0"
