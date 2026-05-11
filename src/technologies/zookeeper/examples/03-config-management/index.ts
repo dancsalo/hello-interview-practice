@@ -1,7 +1,7 @@
-import type { Example, Logger } from '../../../../lib/types.js';
+import type { ZooKeeperExample, Logger } from '../../../../lib/types.js';
 import { ZooKeeperClient, CreateMode } from '../../client.js';
 
-export const configManagementExample: Example = {
+export const configManagementExample: ZooKeeperExample = {
   name: 'Configuration Management',
   description: 'Centralized config with real-time updates and versioning',
 
