@@ -5,7 +5,12 @@ import { RedisClient } from './technologies/redis/client.js';
 import { Logger } from './lib/logger.js';
 import { StepByStepLogger } from './lib/step-by-step-logger.js';
 import { DockerUtils } from './lib/docker-utils.js';
-import type { Example } from './lib/types.js';
+import type { Example, RedisExample } from './lib/types.js';
+
+// Type guard to check if an example is a RedisExample
+function isRedisExample(example: Example): example is RedisExample {
+  return 'cleanup' in example;
+}
 
 // Import all Redis examples
 import { basicsExample } from './technologies/redis/examples/01-basics/index.js';
@@ -194,7 +199,7 @@ class CLI {
       console.log();
       this.logger.success('Example completed successfully!');
 
-      if (example.cleanup) {
+      if (isRedisExample(example) && example.cleanup) {
         const spinner = ora('Cleaning up...').start();
         await example.cleanup(client);
         spinner.succeed('Cleanup complete');
