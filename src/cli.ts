@@ -170,7 +170,7 @@ class CLI {
           disabled: true,
         },
         {
-          name: '🔍 Elasticsearch (1 example)',
+          name: '🔍 Elasticsearch (2 examples)',
           value: 'elasticsearch',
         },
         {
