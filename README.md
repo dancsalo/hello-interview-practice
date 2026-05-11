@@ -32,9 +32,9 @@ That's it! The CLI will guide you through running examples for each technology.
 ### Technologies
 
 - ✅ **Redis** (10 examples) - Cache, distributed locks, leaderboards, rate limiting, pub/sub, and more
+- ✅ **PostgreSQL** (7 examples) - SQL operations, transactions, indexing, read/write scaling, optimization
 - ✅ **Elasticsearch** (10 examples) - Full-text search, geospatial, aggregations, complex queries, and more
-- 🔜 **Kafka** - Coming soon
-- 🔜 **PostgreSQL** - Coming soon
+- ✅ **Kafka** (2 examples) - Topics, producers, consumers, partitioning strategies
 - 🔜 **Cassandra** - Coming soon
 
 Each technology includes multiple examples demonstrating real-world patterns from basic concepts to production considerations.
@@ -73,17 +73,22 @@ hello-interview-practice/
 │   ├── cli.ts                  # Main interactive menu
 │   ├── lib/                    # Shared utilities
 │   └── technologies/
-│       ├── redis/              # Redis examples
-│       │   ├── README.md       # Redis overview
-│       │   └── examples/       # 10 runnable examples
-│       └── elasticsearch/      # Elasticsearch examples
-│           ├── README.md       # Elasticsearch overview
-│           └── examples/       # 10 runnable examples
+│       ├── redis/              # Redis examples (10)
+│       ├── postgresql/         # PostgreSQL examples (7)
+│       ├── elasticsearch/      # Elasticsearch examples (10)
+│       └── kafka/              # Kafka examples (2)
 ├── scripts/
-│   ├── reset-redis.ts          # Reset Redis data
-│   ├── reset-elasticsearch.ts  # Reset Elasticsearch data
-│   └── reset-all.ts            # Reset all services
-├── key_technologies/           # Reference documentation
+│   ├── test-all-examples.ts       # Run all integration tests
+│   ├── test-redis-examples.ts     # Test Redis examples
+│   ├── test-postgres-examples.ts  # Test PostgreSQL examples
+│   ├── test-elasticsearch-examples.ts # Test Elasticsearch examples
+│   ├── test-kafka-examples.ts     # Test Kafka examples
+│   ├── reset-redis.ts             # Reset Redis data
+│   ├── reset-postgres.ts          # Reset PostgreSQL data
+│   ├── reset-elasticsearch.ts     # Reset Elasticsearch data
+│   ├── reset-kafka.ts             # Reset Kafka data
+│   └── reset-all.ts               # Reset all services
+├── docs/superpowers/           # Technology documentation
 └── docker-compose.yml          # All services
 ```
 
@@ -92,9 +97,16 @@ hello-interview-practice/
 ```bash
 npm start                    # Launch interactive CLI
 npm run dev                  # Development mode with watch
+npm test                     # Run all integration tests
+npm run test:redis           # Run Redis integration tests
+npm run test:postgres        # Run PostgreSQL integration tests
+npm run test:elasticsearch   # Run Elasticsearch integration tests
+npm run test:kafka           # Run Kafka integration tests
 npm run reset                # Reset all service data
 npm run reset:redis          # Reset only Redis data
+npm run reset:postgres       # Reset only PostgreSQL data
 npm run reset:elasticsearch  # Reset only Elasticsearch data
+npm run reset:kafka          # Reset only Kafka data
 npm run docker:up            # Start Docker services
 npm run docker:down          # Stop Docker services
 npm run docker:reset         # Recreate services from scratch
@@ -150,6 +162,45 @@ Each example includes:
 
 See `src/technologies/elasticsearch/README.md` for more details.
 
+## PostgreSQL Examples
+
+The PostgreSQL technology includes 7 comprehensive examples:
+
+1. **Basics** - Core SQL operations (CRUD, joins, relationships, foreign keys)
+2. **Transactions** - ACID properties, isolation levels, concurrency control
+3. **Indexing** - B-tree indexes, performance impact, query optimization
+4. **Advanced Indexing** - Partial indexes, covering indexes, GIN/GiST
+5. **Read Scaling** - Replication strategies, read replicas, connection pooling
+6. **Write Scaling** - Sharding, partitioning, write optimization
+7. **Optimization** - Query planning, EXPLAIN, vacuum, performance tuning
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key SQL commands and PostgreSQL features
+- Production considerations
+- Further reading
+
+See `src/technologies/postgresql/README.md` for more details.
+
+## Kafka Examples
+
+The Kafka technology includes 2 comprehensive examples:
+
+1. **Basics** - Topics, producers, consumers, consumer groups
+2. **Partitioning** - Partition strategies, ordering, parallel processing
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key Kafka concepts
+- Production considerations
+- Further reading
+
+See `src/technologies/kafka/README.md` for more details.
+
 ## Services
 
 ### Redis Stack
@@ -169,7 +220,11 @@ See `src/technologies/elasticsearch/README.md` for more details.
 - **Database**: ecommerce
 - **Image**: postgres:16-alpine
 
-Additional services will be added as more technologies are implemented.
+### Kafka
+- **Port**: 9092 (Broker)
+- **UI**: Kafka UI at http://localhost:8003
+- **Image**: confluentinc/cp-kafka:7.5.0
+- **Requires**: Zookeeper (auto-started)
 
 ## Troubleshooting
 

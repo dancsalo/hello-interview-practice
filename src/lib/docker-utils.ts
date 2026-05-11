@@ -132,9 +132,9 @@ export class DockerUtils {
   static async checkServices(): Promise<ServiceHealth[]> {
     return Promise.all([
       this.checkRedisHealth(),
+      this.checkPostgresHealth(),
       this.checkElasticsearchHealth(),
       this.checkKibanaHealth(),
-      this.checkPostgresHealth(),
     ]);
   }
 
@@ -164,11 +164,25 @@ export class DockerUtils {
   }
 
   /**
+   * Reset Kafka by deleting all topics
+   */
+  static async resetKafka(): Promise<void> {
+    try {
+      await execAsync(
+        'docker exec system-design-kafka kafka-topics --bootstrap-server localhost:9092 --list | grep -v "^__" | xargs -I {} kafka-topics --bootstrap-server localhost:9092 --delete --topic {}'
+      );
+    } catch (error) {
+      // No topics to delete or command failed - that's okay
+    }
+  }
+
+  /**
    * Reset all services
    */
   static async resetAll(): Promise<void> {
     await this.resetRedis();
     await this.resetPostgres();
+    await this.resetKafka();
   }
 
   /**
