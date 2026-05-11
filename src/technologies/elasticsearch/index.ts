@@ -4,6 +4,7 @@ import { geospatialSearchExample } from './examples/03-geospatial-search/index.j
 import { aggregationsExample } from './examples/04-aggregations/index.js';
 import { complexQueriesExample } from './examples/05-complex-queries/index.js';
 import { sortingPaginationExample } from './examples/06-sorting-pagination/index.js';
+import { documentVersioningExample } from './examples/07-document-versioning/index.js';
 
 export const ELASTICSEARCH_EXAMPLES = [
   basicsExample,
@@ -12,4 +13,5 @@ export const ELASTICSEARCH_EXAMPLES = [
   aggregationsExample,
   complexQueriesExample,
   sortingPaginationExample,
+  documentVersioningExample,
 ];
