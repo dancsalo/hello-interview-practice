@@ -165,14 +165,14 @@ export const timeSeriesExample: Example = {
       'TS.MRANGE',
       fiveMinutesAgo.toString(),
       now.toString(),
-      'FILTER',
-      'server=server1',
       'AGGREGATION',
       'AVG',
       '60000',
+      'FILTER',
+      'server=server1',
     ]);
 
-    logger.command('TS.MRANGE <from> <to> FILTER server=server1 AGGREGATION AVG 60000');
+    logger.command('TS.MRANGE <from> <to> AGGREGATION AVG 60000 FILTER server=server1');
     logger.info('All server1 metrics (averaged per minute):\n');
 
     if (Array.isArray(allMetrics)) {
