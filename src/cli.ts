@@ -2,6 +2,7 @@ import { select, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
 import ora from 'ora';
 import { RedisClient } from './technologies/redis/client.js';
+import { ElasticsearchClient } from './technologies/elasticsearch/client.js';
 import { Logger } from './lib/logger.js';
 import { StepByStepLogger } from './lib/step-by-step-logger.js';
 import { DockerUtils } from './lib/docker-utils.js';
@@ -19,6 +20,9 @@ import { pubSubExample } from './technologies/redis/examples/08-pubsub/index.js'
 import { bloomFiltersExample } from './technologies/redis/examples/09-bloom-filters/index.js';
 import { timeSeriesExample } from './technologies/redis/examples/10-time-series/index.js';
 
+// Import all Elasticsearch examples
+import { ELASTICSEARCH_EXAMPLES } from './technologies/elasticsearch/index.js';
+
 const REDIS_EXAMPLES: Example[] = [
   basicsExample,
   cacheExample,
@@ -34,11 +38,13 @@ const REDIS_EXAMPLES: Example[] = [
 
 class CLI {
   private redisClient: RedisClient;
+  private elasticsearchClient: ElasticsearchClient;
   private logger: Logger;
   private shuttingDown = false;
 
   constructor() {
     this.redisClient = new RedisClient();
+    this.elasticsearchClient = new ElasticsearchClient();
     this.logger = new Logger();
     this.setupSignalHandlers();
   }
@@ -54,6 +60,8 @@ class CLI {
       try {
         await this.redisClient.disconnect();
         this.logger.success('Disconnected from Redis');
+        await this.elasticsearchClient.disconnect();
+        this.logger.success('Disconnected from Elasticsearch');
       } catch (error) {
         this.logger.error(`Error during shutdown: ${error}`);
       }
@@ -122,6 +130,26 @@ class CLI {
     }
   }
 
+  private async connectElasticsearch(): Promise<boolean> {
+    const spinner = ora('Connecting to Elasticsearch...').start();
+
+    try {
+      await this.elasticsearchClient.connect();
+      const healthy = await this.elasticsearchClient.healthCheck();
+
+      if (healthy) {
+        spinner.succeed('Connected to Elasticsearch');
+        return true;
+      } else {
+        spinner.fail('Elasticsearch health check failed');
+        return false;
+      }
+    } catch (error) {
+      spinner.fail(`Failed to connect to Elasticsearch: ${error}`);
+      return false;
+    }
+  }
+
   private async showTechnologyMenu(): Promise<string | null> {
     console.log();
     const technology = await select({
@@ -142,9 +170,8 @@ class CLI {
           disabled: true,
         },
         {
-          name: '🔍 Elasticsearch (Coming soon)',
+          name: '🔍 Elasticsearch (1 example)',
           value: 'elasticsearch',
-          disabled: true,
         },
         {
           name: '❌ Exit',
@@ -179,6 +206,62 @@ class CLI {
     return selected;
   }
 
+  private async showExampleMenu<T>(examples: Example<T>[], client: T): Promise<void> {
+    let continueExamples = true;
+
+    while (continueExamples) {
+      console.log();
+      const choices = examples.map((example, idx) => ({
+        name: `${String(idx + 1).padStart(2, '0')}. ${example.name}`,
+        value: example,
+        description: example.description,
+      }));
+
+      choices.push({
+        name: '← Back to technologies',
+        value: null as any,
+        description: 'Return to main menu',
+      });
+
+      const selected = await select({
+        message: 'Select an example:',
+        choices,
+        pageSize: 12,
+      });
+
+      if (!selected) {
+        break;
+      }
+
+      await this.runExampleGeneric(selected, client);
+
+      const action = await this.showPostExampleMenu();
+
+      switch (action) {
+        case 'another':
+          continue;
+
+        case 'reset-redis':
+          await this.handleReset('redis');
+          continue;
+
+        case 'reset-all':
+          await this.handleReset('all');
+          continue;
+
+        case 'back':
+          continueExamples = false;
+          break;
+
+        case 'exit':
+          this.logger.info('Goodbye!');
+          await this.redisClient.disconnect();
+          await this.elasticsearchClient.disconnect();
+          process.exit(0);
+      }
+    }
+  }
+
   private async runExample(example: Example): Promise<void> {
     console.log();
     console.log(chalk.bold.cyan('═'.repeat(70)));
@@ -203,6 +286,32 @@ class CLI {
       console.log();
       this.logger.error(`Example failed: ${error}`);
       this.logger.warning('You may need to reset Redis to recover.');
+    }
+  }
+
+  private async runExampleGeneric<T>(example: Example<T>, client: T): Promise<void> {
+    console.log();
+    console.log(chalk.bold.cyan('═'.repeat(70)));
+    console.log(chalk.bold.cyan(`  Running: ${example.name}`));
+    console.log(chalk.bold.cyan('═'.repeat(70)));
+    console.log();
+
+    try {
+      const steppingLogger = new StepByStepLogger(this.logger);
+      await example.run(client, steppingLogger);
+
+      console.log();
+      this.logger.success('Example completed successfully!');
+
+      if (example.cleanup) {
+        const spinner = ora('Cleaning up...').start();
+        await example.cleanup(client);
+        spinner.succeed('Cleanup complete');
+      }
+    } catch (error) {
+      console.log();
+      this.logger.error(`Example failed: ${error}`);
+      this.logger.warning('You may need to reset the technology to recover.');
     }
   }
 
@@ -276,12 +385,6 @@ class CLI {
       process.exit(1);
     }
 
-    // Connect to Redis
-    const redisConnected = await this.connectRedis();
-    if (!redisConnected) {
-      process.exit(1);
-    }
-
     // Main loop
     try {
       while (true) {
@@ -292,47 +395,18 @@ class CLI {
           break;
         }
 
-        // Currently only Redis is implemented
         if (technology === 'redis') {
-          let continueRedis = true;
-
-          while (continueRedis) {
-            // Example selection
-            const example = await this.showRedisExamplesMenu();
-            if (!example) {
-              // User chose "Back"
-              break;
-            }
-
-            // Run the example
-            await this.runExample(example);
-
-            // Post-example actions
-            const action = await this.showPostExampleMenu();
-
-            switch (action) {
-              case 'another':
-                // Continue to next example selection
-                continue;
-
-              case 'reset-redis':
-                await this.handleReset('redis');
-                continue;
-
-              case 'reset-all':
-                await this.handleReset('all');
-                continue;
-
-              case 'back':
-                continueRedis = false;
-                break;
-
-              case 'exit':
-                this.logger.info('Goodbye!');
-                await this.redisClient.disconnect();
-                process.exit(0);
-            }
+          const connected = await this.connectRedis();
+          if (!connected) {
+            return;
           }
+          await this.showExampleMenu(REDIS_EXAMPLES, this.redisClient.getClient());
+        } else if (technology === 'elasticsearch') {
+          const connected = await this.connectElasticsearch();
+          if (!connected) {
+            return;
+          }
+          await this.showExampleMenu(ELASTICSEARCH_EXAMPLES, this.elasticsearchClient.getClient());
         }
       }
     } catch (error) {
@@ -344,6 +418,7 @@ class CLI {
       }
     } finally {
       await this.redisClient.disconnect();
+      await this.elasticsearchClient.disconnect();
     }
   }
 }
