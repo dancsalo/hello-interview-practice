@@ -74,18 +74,25 @@ export const configManagementExample: ZooKeeperExample = {
       }
 
       private async reloadConfig(path: string, key: string): Promise<void> {
-        const { data } = await this.client.getData(path, false);
-        const oldValue = this.config.get(key);
-        const newValue = data.toString();
-        this.config.set(key, newValue);
+        try {
+          const { data } = await this.client.getData(path, false);
+          const oldValue = this.config.get(key);
+          const newValue = data.toString();
+          this.config.set(key, newValue);
 
-        this.logger.info(`${this.name} updated ${key}: ${oldValue} → ${newValue}`);
+          this.logger.info(`${this.name} updated ${key}: ${oldValue} → ${newValue}`);
 
-        const zkClient = this.client.getClient();
-        zkClient.getData(path, (event) => {
-          this.logger.info(`\n🔔 ${this.name} detected config change: ${key}`);
-          this.reloadConfig(path, key);
-        }, () => {});
+          const zkClient = this.client.getClient();
+          zkClient.getData(path, (event) => {
+            this.logger.info(`\n🔔 ${this.name} detected config change: ${key}`);
+            this.reloadConfig(path, key);
+          }, () => {});
+        } catch (error: any) {
+          // Node was deleted (cleanup), ignore
+          if (error.name !== 'NO_NODE') {
+            throw error;
+          }
+        }
       }
 
       getConfig(key: string): string | undefined {
@@ -159,7 +166,8 @@ export const configManagementExample: ZooKeeperExample = {
     logger.success('Maintenance mode deactivated');
     logger.production('ZooKeeper enables instant system-wide switches without deploys\n');
 
-    // Cleanup
+    // Cleanup - wait a bit longer to let async watches settle
+    await new Promise((resolve) => setTimeout(resolve, 300));
     await client.deleteRecursive('/demo-ecommerce');
 
     logger.success('\n✓ Configuration management demonstrated: real-time updates, versioning, instant propagation!');

@@ -113,16 +113,23 @@ export const serviceDiscoveryExample: ZooKeeperExample = {
       }
 
       private async refreshInstances(): Promise<void> {
-        const path = `${basePath}/${this.serviceName}`;
-        const children = await this.client.getChildren(path);
+        try {
+          const path = `${basePath}/${this.serviceName}`;
+          const children = await this.client.getChildren(path);
 
-        this.instances.clear();
-        for (const child of children) {
-          const { data } = await this.client.getData(`${path}/${child}`);
-          this.instances.set(child, JSON.parse(data.toString()));
+          this.instances.clear();
+          for (const child of children) {
+            const { data } = await this.client.getData(`${path}/${child}`);
+            this.instances.set(child, JSON.parse(data.toString()));
+          }
+
+          this.logger.info(`${this.serviceName} instances refreshed: ${this.instances.size} available`);
+        } catch (error: any) {
+          // Node was deleted (cleanup), ignore
+          if (error.name !== 'NO_NODE') {
+            throw error;
+          }
         }
-
-        this.logger.info(`${this.serviceName} instances refreshed: ${this.instances.size} available`);
       }
 
       private watchForChanges(): void {
