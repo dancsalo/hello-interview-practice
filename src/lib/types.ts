@@ -24,21 +24,18 @@ export interface Example<TClient = RedisClientType> {
 export type RedisExample = Example<RedisClientType>;
 export type PostgreSQLExample = Example<Client>;
 export type KafkaExample = Example<any>;
+export type FlinkExample = Example<any>;
 
-export interface FlinkExample {
-  name: string;
-  description: string;
-  run(client: any, logger: Logger): Promise<void>;
-}
+export type FlinkJobStatusType = 'CREATED' | 'RUNNING' | 'FINISHED' | 'FAILED' | 'CANCELED';
 
 export interface FlinkJobSubmission {
   jobId: string;
-  status: 'CREATED' | 'RUNNING' | 'FINISHED' | 'FAILED' | 'CANCELED';
+  status: FlinkJobStatusType;
 }
 
 export interface FlinkJobStatus {
   jobId: string;
-  status: string;
+  status: FlinkJobStatusType;
   startTime: number;
   endTime?: number;
 }
