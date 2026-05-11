@@ -13,14 +13,22 @@ export const cacheExample: Example = {
     // Setup PostgreSQL
     const pgClient = new Client({
       host: process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
+      port: parseInt(process.env.POSTGRES_PORT || '5433', 10),
       user: process.env.POSTGRES_USER || 'demo',
       password: process.env.POSTGRES_PASSWORD || 'demo',
       database: process.env.POSTGRES_DB || 'ecommerce',
     });
 
-    await pgClient.connect();
-    logger.success('Connected to PostgreSQL');
+    // Try to connect to PostgreSQL with graceful fallback
+    try {
+      await pgClient.connect();
+      logger.success('Connected to PostgreSQL');
+    } catch (error) {
+      logger.warning('PostgreSQL not available - skipping cache example');
+      logger.info('To run this example: ensure PostgreSQL is running (docker-compose up -d)');
+      logger.info(`Connection attempted: localhost:${pgClient.port}\n`);
+      return;
+    }
 
     // Create products table
     await pgClient.query(`

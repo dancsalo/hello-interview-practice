@@ -20,7 +20,12 @@ import { eventSourcingExample } from '../src/technologies/redis/examples/07-even
 import { pubSubExample } from '../src/technologies/redis/examples/08-pubsub/index.js';
 import { bloomFiltersExample } from '../src/technologies/redis/examples/09-bloom-filters/index.js';
 import { timeSeriesExample } from '../src/technologies/redis/examples/10-time-series/index.js';
-import type { Example } from '../src/lib/types.js';
+import type { Example, RedisExample } from '../src/lib/types.js';
+
+// Type guard to check if an example is a RedisExample
+function isRedisExample(example: Example): example is RedisExample {
+  return 'cleanup' in example;
+}
 
 const REDIS_EXAMPLES: Example[] = [
   basicsExample,
@@ -60,7 +65,7 @@ async function testExample(
 
     await example.run(client, steppingLogger);
 
-    if (example.cleanup) {
+    if (isRedisExample(example) && example.cleanup) {
       await example.cleanup(client);
     }
 

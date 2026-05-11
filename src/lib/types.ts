@@ -1,5 +1,6 @@
 import type { RedisClientType } from 'redis';
 import type { Client } from 'pg';
+import type { Producer, Consumer, Admin } from 'kafkajs';
 
 export interface Logger {
   info(message: string): void;
@@ -22,6 +23,7 @@ export interface Example<TClient = RedisClientType> {
 
 export type RedisExample = Example<RedisClientType>;
 export type PostgreSQLExample = Example<Client>;
+export type KafkaExample = Example<any>;
 
 export interface TechnologyClient {
   connect(): Promise<void>;
