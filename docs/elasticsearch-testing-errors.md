@@ -158,4 +158,59 @@ AggregateError
 - Created `.env` file with POSTGRES_PORT=5433
 - Redis cache example already uses `process.env.POSTGRES_PORT` with fallback to 5432
 - Fix was environmental configuration, not code change
-- Re-running tests to verify fix
+- Updated .env.example to document correct port
+- Updated README Quick Start to include .env creation step
+
+**Resolution Status:** ✅ RESOLVED
+
+---
+
+## Final Test Results (npm test)
+
+**Date:** 2026-05-11
+**Status:** ✅ ALL TESTS PASSING
+
+### Redis Test Suite
+- **Total Tests:** 10
+- **Passed:** 10
+- **Failed:** 0
+- **Total Duration:** 3092ms
+
+**Passed Tests:**
+1. ✓ Basics: Data Structures (9ms)
+2. ✓ Cache: Cache-Aside Pattern (20ms) - **Now working with PostgreSQL**
+3. ✓ Distributed Lock (1414ms)
+4. ✓ Leaderboards (13ms)
+5. ✓ Rate Limiting (348ms)
+6. ✓ Proximity Search (15ms)
+7. ✓ Event Sourcing (20ms)
+8. ✓ Pub/Sub (639ms)
+9. ✓ Bloom Filters (573ms)
+10. ✓ Time Series (41ms)
+
+### Elasticsearch Test Suite
+- **Total Tests:** 10
+- **Passed:** 10
+- **Failed:** 0
+- **Total Duration:** 44937ms
+
+**Passed Tests:**
+1. ✓ Basics: Core Concepts (2066ms)
+2. ✓ Full-Text Search: Text Analysis (1077ms)
+3. ✓ Geospatial Search: Location Queries (1071ms)
+4. ✓ Aggregations: Analytics & Bucketing (1097ms)
+5. ✓ Complex Queries: Bool, Nested, Filtering (1065ms)
+6. ✓ Sorting & Pagination: Result Navigation (1105ms)
+7. ✓ Document Versioning: Concurrent Updates (5097ms)
+8. ✓ Faceted Search: Multi-Dimensional Filtering (1056ms)
+9. ✓ Index Management: Mappings & Reindexing (1181ms)
+10. ✓ Production Patterns: CDC, Sync, Performance (30122ms)
+
+### Overall Results
+- **Total Tests:** 20 (10 Redis + 10 Elasticsearch)
+- **All Passed:** ✅ 20/20
+- **Total Execution Time:** ~48 seconds
+- **Exit Code:** 0 (success)
+
+### Summary
+All Elasticsearch examples are working correctly and integrated with `npm test` command. The only issue found was environmental configuration (PostgreSQL port), which has been resolved. No code bugs were discovered in any of the 10 Elasticsearch examples.
