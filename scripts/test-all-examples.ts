@@ -6,6 +6,7 @@
 
 import { RedisClient } from '../src/technologies/redis/client.js';
 import { KafkaClient } from '../src/technologies/kafka/client.js';
+import { DynamoDBClientWrapper } from '../src/technologies/dynamodb/client.js';
 import { Logger } from '../src/lib/logger.js';
 
 // Redis examples
@@ -23,6 +24,9 @@ import { timeSeriesExample } from '../src/technologies/redis/examples/10-time-se
 // Kafka examples
 import { basicsExample as kafkaBasics } from '../src/technologies/kafka/examples/01-basics/index.js';
 import { partitioningExample } from '../src/technologies/kafka/examples/02-partitioning/index.js';
+
+// DynamoDB examples
+import { basicsExample as dynamoBasics } from '../src/technologies/dynamodb/examples/01-basics/index.js';
 
 import type { Example, RedisExample } from '../src/lib/types.js';
 
@@ -55,6 +59,10 @@ const REDIS_EXAMPLES = [
 const KAFKA_EXAMPLES = [
   kafkaBasics,
   partitioningExample,
+];
+
+const DYNAMODB_EXAMPLES = [
+  dynamoBasics,
 ];
 
 async function testRedisExamples(): Promise<TestResult[]> {
@@ -168,6 +176,60 @@ async function testKafkaExamples(): Promise<TestResult[]> {
   return results;
 }
 
+async function testDynamoDBExamples(): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+  const dynamoClient = new DynamoDBClientWrapper();
+  const logger = new Logger();
+
+  try {
+    console.log('\n🗄️ Testing DynamoDB Examples');
+    console.log('═'.repeat(70));
+
+    await dynamoClient.connect();
+    console.log('✓ Connected to DynamoDB\n');
+
+    const clients = dynamoClient.getClients();
+
+    for (const example of DYNAMODB_EXAMPLES) {
+      const startTime = Date.now();
+      console.log(`Testing: ${example.name}`);
+
+      try {
+        await example.run(clients, logger);
+
+        const duration = Date.now() - startTime;
+        results.push({
+          technology: 'DynamoDB',
+          name: example.name,
+          success: true,
+          duration,
+        });
+        console.log(`✓ ${example.name} passed (${duration}ms)\n`);
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        results.push({
+          technology: 'DynamoDB',
+          name: example.name,
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          duration,
+        });
+        console.log(`✗ ${example.name} failed: ${error}\n`);
+      }
+
+      // Reset DynamoDB between examples
+      await dynamoClient.reset();
+    }
+
+    await dynamoClient.disconnect();
+  } catch (error) {
+    console.error('✗ DynamoDB test suite setup failed:', error);
+    await dynamoClient.disconnect();
+  }
+
+  return results;
+}
+
 async function testAll() {
   console.log('🧪 Testing All Examples Across All Technologies\n');
   const startTime = Date.now();
@@ -175,8 +237,9 @@ async function testAll() {
   // Run tests for each technology
   const redisResults = await testRedisExamples();
   const kafkaResults = await testKafkaExamples();
+  const dynamoResults = await testDynamoDBExamples();
 
-  const allResults = [...redisResults, ...kafkaResults];
+  const allResults = [...redisResults, ...kafkaResults, ...dynamoResults];
   const totalDuration = Date.now() - startTime;
 
   // Print summary
@@ -187,6 +250,7 @@ async function testAll() {
   const byTechnology = {
     Redis: redisResults,
     Kafka: kafkaResults,
+    DynamoDB: dynamoResults,
   };
 
   for (const [tech, results] of Object.entries(byTechnology)) {
