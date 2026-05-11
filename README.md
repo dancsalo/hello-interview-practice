@@ -29,8 +29,8 @@ That's it! The CLI will guide you through running examples for each technology.
 ### Technologies
 
 - ✅ **Redis** (10 examples) - Cache, distributed locks, leaderboards, rate limiting, pub/sub, and more
-- 🔜 **Kafka** - Coming soon
-- 🔜 **PostgreSQL** - Coming soon
+- ✅ **Kafka** (2 examples, 8 more coming) - Event streaming, partitioning, consumer groups, and more
+- ✅ **PostgreSQL** (7 examples) - Transactions, indexing, full-text search, replication, optimization
 - 🔜 **Cassandra** - Coming soon
 - 🔜 **Elasticsearch** - Coming soon
 
@@ -85,8 +85,14 @@ hello-interview-practice/
 ```bash
 npm start              # Launch interactive CLI
 npm run dev            # Development mode with watch
+npm run test           # Test all examples
+npm run test:redis     # Test Redis examples only
+npm run test:kafka     # Test Kafka examples only
+npm run test:postgres  # Test PostgreSQL examples only
 npm run reset          # Reset all service data
 npm run reset:redis    # Reset only Redis data
+npm run reset:kafka    # Reset only Kafka topics
+npm run reset:postgres # Reset only PostgreSQL data
 npm run docker:up      # Start Docker services
 npm run docker:down    # Stop Docker services
 npm run docker:reset   # Recreate services from scratch
@@ -117,12 +123,76 @@ Each example includes:
 
 See `src/technologies/redis/README.md` for more details.
 
+## Kafka Examples
+
+The Kafka technology currently includes 2 examples with 8 more coming:
+
+**Phase 1: Available Now**
+
+1. **Basics** - Topics, producers, consumers, messages, offsets
+2. **Partitioning Strategies** - Key selection, distribution, ordering guarantees
+
+**Phase 2: Coming Soon**
+
+3. **Consumer Groups** - Parallel consumption and rebalancing
+4. **Message Ordering** - Ordering guarantees and trade-offs
+5. **Pub/Sub Messaging** - Fan-out patterns and multiple consumer groups
+6. **Event Streaming** - Continuous processing and replay
+
+**Phase 3: Coming Soon**
+
+7. **Idempotency & Retries** - Exactly-once semantics and dead letter queues
+8. **Hot Partition Handling** - Key salting and compound keys
+9. **Change Data Capture** - Database changes as events
+10. **Event Sourcing** - Kafka as event store
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key Kafka concepts
+- Production considerations
+- Interview tips
+- Further reading
+
+See `src/technologies/kafka/README.md` for more details.
+
+## PostgreSQL Examples
+
+The PostgreSQL technology includes 7 comprehensive examples:
+
+1. **Basics** - Core operations (CRUD, joins, aggregations, subqueries)
+2. **Transactions** - ACID properties, isolation levels, concurrency control
+3. **Indexing** - B-tree, hash, GiST, covering indexes, index strategies
+4. **Full-Text Search** - tsvector, tsquery, ranking, phrase search
+5. **Replication** - Logical vs physical, streaming, failover, monitoring
+6. **Performance Optimization** - EXPLAIN, query tuning, connection pooling, partitioning
+7. **Advanced Queries** - CTEs, window functions, JSON operations, materialized views
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key PostgreSQL concepts
+- Production considerations
+- Interview tips
+- Further reading
+
+See `src/technologies/postgres/README.md` for more details.
+
 ## Services
 
 ### Redis Stack
 - **Port**: 6379
 - **UI**: RedisInsight at http://localhost:8001
 - **Image**: redis/redis-stack (includes all modules)
+
+### Kafka
+- **Port**: 9092 (Kafka broker)
+- **Port**: 2181 (Zookeeper)
+- **UI**: Kafka UI at http://localhost:8002
+- **Image**: confluentinc/cp-kafka:7.5.0
+- **Use**: Event streaming, message queues, real-time processing
 
 ### PostgreSQL
 - **Port**: 5433
