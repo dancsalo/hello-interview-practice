@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { RedisClient } from './technologies/redis/client.js';
 import { Logger } from './lib/logger.js';
+import { StepByStepLogger } from './lib/step-by-step-logger.js';
 import { DockerUtils } from './lib/docker-utils.js';
 import type { Example } from './lib/types.js';
 
@@ -187,7 +188,8 @@ class CLI {
 
     try {
       const client = this.redisClient.getClient();
-      await example.run(client, this.logger);
+      const steppingLogger = new StepByStepLogger(this.logger);
+      await example.run(client, steppingLogger);
 
       console.log();
       this.logger.success('Example completed successfully!');
