@@ -2,10 +2,16 @@ import { select, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
 import ora from 'ora';
 import { RedisClient } from './technologies/redis/client.js';
+import { KafkaClient } from './technologies/kafka/client.js';
 import { Logger } from './lib/logger.js';
 import { StepByStepLogger } from './lib/step-by-step-logger.js';
 import { DockerUtils } from './lib/docker-utils.js';
-import type { Example } from './lib/types.js';
+import type { Example, RedisExample } from './lib/types.js';
+
+// Type guard to check if an example is a RedisExample
+function isRedisExample(example: Example): example is RedisExample {
+  return 'cleanup' in example;
+}
 
 // Import all Redis examples
 import { basicsExample } from './technologies/redis/examples/01-basics/index.js';
@@ -18,6 +24,10 @@ import { eventSourcingExample } from './technologies/redis/examples/07-event-sou
 import { pubSubExample } from './technologies/redis/examples/08-pubsub/index.js';
 import { bloomFiltersExample } from './technologies/redis/examples/09-bloom-filters/index.js';
 import { timeSeriesExample } from './technologies/redis/examples/10-time-series/index.js';
+
+// Import all Kafka examples
+import { basicsExample as kafkaBasicsExample } from './technologies/kafka/examples/01-basics/index.js';
+import { partitioningExample } from './technologies/kafka/examples/02-partitioning/index.js';
 
 const REDIS_EXAMPLES: Example[] = [
   basicsExample,
@@ -32,13 +42,20 @@ const REDIS_EXAMPLES: Example[] = [
   timeSeriesExample,
 ];
 
+const KAFKA_EXAMPLES: Example[] = [
+  kafkaBasicsExample,
+  partitioningExample,
+];
+
 class CLI {
   private redisClient: RedisClient;
+  private kafkaClient: KafkaClient;
   private logger: Logger;
   private shuttingDown = false;
 
   constructor() {
     this.redisClient = new RedisClient();
+    this.kafkaClient = new KafkaClient();
     this.logger = new Logger();
     this.setupSignalHandlers();
   }
@@ -54,6 +71,8 @@ class CLI {
       try {
         await this.redisClient.disconnect();
         this.logger.success('Disconnected from Redis');
+        await this.kafkaClient.disconnect();
+        this.logger.success('Disconnected from Kafka');
       } catch (error) {
         this.logger.error(`Error during shutdown: ${error}`);
       }
@@ -132,9 +151,8 @@ class CLI {
           value: 'redis',
         },
         {
-          name: '📨 Kafka (Coming soon)',
+          name: '📨 Kafka (2 examples)',
           value: 'kafka',
-          disabled: true,
         },
         {
           name: '🐘 PostgreSQL (Coming soon)',
@@ -179,7 +197,50 @@ class CLI {
     return selected;
   }
 
-  private async runExample(example: Example): Promise<void> {
+  private async showKafkaExamplesMenu(): Promise<Example | null> {
+    console.log();
+    const choices = KAFKA_EXAMPLES.map((example, idx) => ({
+      name: `${String(idx + 1).padStart(2, '0')}. ${example.name}`,
+      value: example,
+      description: example.description,
+    }));
+
+    choices.push({
+      name: '← Back to technologies',
+      value: null as any,
+      description: 'Return to main menu',
+    });
+
+    const selected = await select({
+      message: 'Select a Kafka example:',
+      choices,
+      pageSize: 12,
+    });
+
+    return selected;
+  }
+
+  private async connectKafka(): Promise<boolean> {
+    const spinner = ora('Connecting to Kafka...').start();
+
+    try {
+      await this.kafkaClient.connect();
+      const healthy = await this.kafkaClient.healthCheck();
+
+      if (healthy) {
+        spinner.succeed('Connected to Kafka');
+        return true;
+      } else {
+        spinner.fail('Kafka health check failed');
+        return false;
+      }
+    } catch (error) {
+      spinner.fail(`Failed to connect to Kafka: ${error}`);
+      return false;
+    }
+  }
+
+  private async runExample(example: Example, technology: string): Promise<void> {
     console.log();
     console.log(chalk.bold.cyan('═'.repeat(70)));
     console.log(chalk.bold.cyan(`  Running: ${example.name}`));
@@ -187,14 +248,20 @@ class CLI {
     console.log();
 
     try {
-      const client = this.redisClient.getClient();
       const steppingLogger = new StepByStepLogger(this.logger);
-      await example.run(client, steppingLogger);
+
+      if (technology === 'kafka') {
+        await example.run(this.kafkaClient as any, steppingLogger);
+      } else {
+        const client = this.redisClient.getClient();
+        await example.run(client, steppingLogger);
+      }
 
       console.log();
       this.logger.success('Example completed successfully!');
 
-      if (example.cleanup) {
+      if (isRedisExample(example) && example.cleanup) {
+        const client = this.redisClient.getClient();
         const spinner = ora('Cleaning up...').start();
         await example.cleanup(client);
         spinner.succeed('Cleanup complete');
@@ -202,7 +269,11 @@ class CLI {
     } catch (error) {
       console.log();
       this.logger.error(`Example failed: ${error}`);
-      this.logger.warning('You may need to reset Redis to recover.');
+      if (technology === 'kafka') {
+        this.logger.warning('You may need to reset Kafka to recover.');
+      } else {
+        this.logger.warning('You may need to reset Redis to recover.');
+      }
     }
   }
 
@@ -282,6 +353,12 @@ class CLI {
       process.exit(1);
     }
 
+    // Connect to Kafka
+    const kafkaConnected = await this.connectKafka();
+    if (!kafkaConnected) {
+      this.logger.warning('Kafka is not available. Kafka examples will be disabled.');
+    }
+
     // Main loop
     try {
       while (true) {
@@ -292,27 +369,21 @@ class CLI {
           break;
         }
 
-        // Currently only Redis is implemented
         if (technology === 'redis') {
           let continueRedis = true;
 
           while (continueRedis) {
-            // Example selection
             const example = await this.showRedisExamplesMenu();
             if (!example) {
-              // User chose "Back"
               break;
             }
 
-            // Run the example
-            await this.runExample(example);
+            await this.runExample(example, 'redis');
 
-            // Post-example actions
             const action = await this.showPostExampleMenu();
 
             switch (action) {
               case 'another':
-                // Continue to next example selection
                 continue;
 
               case 'reset-redis':
@@ -330,6 +401,48 @@ class CLI {
               case 'exit':
                 this.logger.info('Goodbye!');
                 await this.redisClient.disconnect();
+                await this.kafkaClient.disconnect();
+                process.exit(0);
+            }
+          }
+        } else if (technology === 'kafka') {
+          if (!kafkaConnected) {
+            this.logger.error('Kafka is not available. Please check Docker services.');
+            continue;
+          }
+
+          let continueKafka = true;
+
+          while (continueKafka) {
+            const example = await this.showKafkaExamplesMenu();
+            if (!example) {
+              break;
+            }
+
+            await this.runExample(example, 'kafka');
+
+            const action = await this.showPostExampleMenu();
+
+            switch (action) {
+              case 'another':
+                continue;
+
+              case 'reset-redis':
+                await this.handleReset('redis');
+                continue;
+
+              case 'reset-all':
+                await this.handleReset('all');
+                continue;
+
+              case 'back':
+                continueKafka = false;
+                break;
+
+              case 'exit':
+                this.logger.info('Goodbye!');
+                await this.redisClient.disconnect();
+                await this.kafkaClient.disconnect();
                 process.exit(0);
             }
           }
@@ -344,6 +457,7 @@ class CLI {
       }
     } finally {
       await this.redisClient.disconnect();
+      await this.kafkaClient.disconnect();
     }
   }
 }

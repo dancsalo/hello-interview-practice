@@ -52,6 +52,19 @@ export class DockerUtils {
         healthy: false,
         url: 'http://localhost:8001',
       },
+      {
+        name: 'Kafka',
+        healthy: false,
+      },
+      {
+        name: 'Zookeeper',
+        healthy: false,
+      },
+      {
+        name: 'Kafka UI',
+        healthy: false,
+        url: 'http://localhost:8080',
+      },
     ];
 
     // Map display names to actual docker-compose service names
@@ -59,6 +72,9 @@ export class DockerUtils {
       'Redis': 'redis',
       'PostgreSQL': 'postgres',
       'RedisInsight': 'redis-insight',
+      'Kafka': 'kafka',
+      'Zookeeper': 'zookeeper',
+      'Kafka UI': 'kafka-ui',
     };
 
     for (const service of services) {
@@ -95,11 +111,25 @@ export class DockerUtils {
   }
 
   /**
+   * Reset Kafka by deleting all topics
+   */
+  static async resetKafka(): Promise<void> {
+    try {
+      await execAsync(
+        'docker exec system-design-kafka kafka-topics --bootstrap-server localhost:9092 --list | grep -v "^__" | xargs -I {} kafka-topics --bootstrap-server localhost:9092 --delete --topic {}'
+      );
+    } catch (error) {
+      // No topics to delete or command failed - that's okay
+    }
+  }
+
+  /**
    * Reset all services
    */
   static async resetAll(): Promise<void> {
     await this.resetRedis();
     await this.resetPostgres();
+    await this.resetKafka();
   }
 
   /**
