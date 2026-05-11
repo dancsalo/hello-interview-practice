@@ -22,7 +22,7 @@ export const watchesExample: ZooKeeperExample = {
     logger.command('getData /demo-watches/config [with watch]');
     logger.info('Watch registered - waiting for change...');
 
-    await new Promise<void>((resolve) => {
+    const watchPromise = new Promise<void>((resolve) => {
       const timer = setTimeout(() => {
         logger.info('Timeout waiting for watch');
         resolve();
@@ -38,6 +38,7 @@ export const watchesExample: ZooKeeperExample = {
 
     logger.command('setData /demo-watches/config "v2"');
     await client.setData(`${basePath}/config`, Buffer.from('v2'));
+    await watchPromise;
 
     logger.assert(watchFired, 'Data watch triggered on setData');
     logger.production(
@@ -49,7 +50,7 @@ export const watchesExample: ZooKeeperExample = {
     watchFired = false;
     logger.command('getData /demo-watches/config [with watch]');
 
-    await new Promise<void>((resolve) => {
+    const watchPromise2 = new Promise<void>((resolve) => {
       const timer = setTimeout(() => {
         logger.info('Timeout waiting for watch');
         resolve();
@@ -65,6 +66,7 @@ export const watchesExample: ZooKeeperExample = {
 
     logger.command('setData /demo-watches/config "v3"');
     await client.setData(`${basePath}/config`, Buffer.from('v3'));
+    await watchPromise2;
     logger.assert(watchFired, 'Watch fired on first update');
 
     watchFired = false;
@@ -86,7 +88,7 @@ export const watchesExample: ZooKeeperExample = {
     let childWatchFired = false;
     logger.command('getChildren /demo-watches/servers [with watch]');
 
-    await new Promise<void>((resolve) => {
+    const childWatchPromise = new Promise<void>((resolve) => {
       const timer = setTimeout(() => {
         logger.info('Timeout waiting for child watch');
         resolve();
@@ -106,6 +108,7 @@ export const watchesExample: ZooKeeperExample = {
       Buffer.from('192.168.1.101:8080'),
       CreateMode.EPHEMERAL
     );
+    await childWatchPromise;
 
     logger.assert(childWatchFired, 'Child watch triggered when child added');
     logger.production('Child watches fire when children are added or removed (not on data changes)\n');
@@ -116,7 +119,7 @@ export const watchesExample: ZooKeeperExample = {
     logger.command('exists /demo-watches/future-node [with watch]');
     logger.info('Watch registered for non-existent node...');
 
-    await new Promise<void>((resolve) => {
+    const existsWatchPromise = new Promise<void>((resolve) => {
       const timer = setTimeout(() => {
         logger.info('Timeout waiting for exists watch');
         resolve();
@@ -132,6 +135,7 @@ export const watchesExample: ZooKeeperExample = {
 
     logger.command('create /demo-watches/future-node');
     await client.create(`${basePath}/future-node`, Buffer.from('data'), CreateMode.PERSISTENT);
+    await existsWatchPromise;
 
     logger.assert(existsWatchFired, 'Exists watch fired when node created');
     logger.production('Exists watches fire on node creation or deletion\n');
