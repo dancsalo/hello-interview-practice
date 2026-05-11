@@ -11,6 +11,7 @@
     "test:watch": "NON_INTERACTIVE=true tsx watch scripts/test-redis-examples.ts",
     "reset": "tsx scripts/reset-all.ts",
     "reset:redis": "tsx scripts/reset-redis.ts",
+    "reset:postgres": "tsx scripts/reset-postgres.ts",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:reset": "docker-compose down -v && docker-compose up -d",
