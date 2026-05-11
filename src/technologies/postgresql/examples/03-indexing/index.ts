@@ -11,8 +11,9 @@ export const indexingExample: PostgreSQLExample = {
 
     // Setup: Create products table
     logger.step('Setup: Create products table');
+    await client.query(`DROP TABLE IF EXISTS products CASCADE`);
     await client.query(`
-      CREATE TABLE IF NOT EXISTS products (
+      CREATE TABLE products (
         id SERIAL PRIMARY KEY,
         name VARCHAR(200) NOT NULL,
         category VARCHAR(50) NOT NULL,
