@@ -125,7 +125,7 @@ services:
       - "${DYNAMODB_PORT:-8000}:8000"
     command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000 || exit 1"]
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8000' || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -139,7 +139,7 @@ services:
     image: aaronshaf/dynamodb-admin:latest
     container_name: system-design-dynamodb-admin
     ports:
-      - "${DYNAMODB_ADMIN_PORT:-8003}:8001"
+      - "${DYNAMODB_ADMIN_PORT:-8004}:8001"
     environment:
       - DYNAMO_ENDPOINT=http://dynamodb-local:8000
       - AWS_REGION=us-east-1

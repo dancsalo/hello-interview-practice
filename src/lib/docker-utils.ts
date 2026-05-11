@@ -72,7 +72,7 @@ export class DockerUtils {
       {
         name: 'DynamoDB Admin',
         healthy: false,
-        url: 'http://localhost:8003',
+        url: 'http://localhost:8004',
       },
     ];
 
