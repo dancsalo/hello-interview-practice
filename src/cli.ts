@@ -223,6 +223,10 @@ class CLI {
           value: 'postgresql',
         },
         {
+          name: '🌊 Flink - Event Stream Processing (10 examples)',
+          value: 'flink',
+        },
+        {
           name: '🔍 Elasticsearch (Coming soon)',
           value: 'elasticsearch',
           disabled: true,
@@ -557,6 +561,9 @@ class CLI {
                 process.exit(0);
             }
           }
+        } else if (technology === 'flink') {
+          const { runFlinkMenu } = await import('./technologies/flink/index.js');
+          await runFlinkMenu();
         }
       }
     } catch (error) {
