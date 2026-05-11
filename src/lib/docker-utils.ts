@@ -65,6 +65,10 @@ export class DockerUtils {
         healthy: false,
         url: 'http://localhost:8080',
       },
+      {
+        name: 'Cassandra',
+        healthy: false,
+      },
     ];
 
     // Map display names to actual docker-compose service names
@@ -75,6 +79,7 @@ export class DockerUtils {
       'Kafka': 'kafka',
       'Zookeeper': 'zookeeper',
       'Kafka UI': 'kafka-ui',
+      'Cassandra': 'cassandra',
     };
 
     for (const service of services) {
@@ -124,12 +129,38 @@ export class DockerUtils {
   }
 
   /**
+   * Reset Cassandra by dropping all non-system keyspaces
+   */
+  static async resetCassandra(): Promise<void> {
+    try {
+      // Get list of all keyspaces and drop non-system ones
+      const { stdout } = await execAsync(
+        `docker exec system-design-cassandra cqlsh -e "SELECT keyspace_name FROM system_schema.keyspaces;" | grep -v "^\\s*keyspace_name" | grep -v "^\\s*-" | grep -v "^\\s*$" | grep -v "system"`
+      );
+
+      const keyspaces = stdout.trim().split('\n').filter(k => k.trim());
+
+      for (const keyspace of keyspaces) {
+        const k = keyspace.trim();
+        if (k && !k.startsWith('system')) {
+          await execAsync(
+            `docker exec system-design-cassandra cqlsh -e "DROP KEYSPACE IF EXISTS ${k};"`
+          );
+        }
+      }
+    } catch (error) {
+      // No keyspaces to delete or command failed - that's okay
+    }
+  }
+
+  /**
    * Reset all services
    */
   static async resetAll(): Promise<void> {
     await this.resetRedis();
     await this.resetPostgres();
     await this.resetKafka();
+    await this.resetCassandra();
   }
 
   /**

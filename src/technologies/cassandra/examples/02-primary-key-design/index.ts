@@ -175,7 +175,7 @@ export const primaryKeyDesignExample: CassandraExample = {
     logger.production('- Compound partition keys useful for multi-tenancy and load distribution');
   },
 
-  async cleanup(client: Client, logger: Logger): Promise<void> {
+  async cleanup(client: Client): Promise<void> {
     await client.execute('DROP KEYSPACE IF EXISTS pk_demo');
   },
 };
