@@ -14,26 +14,49 @@ export const advancedIndexingExample: PostgreSQLExample = {
     await client.query('CREATE EXTENSION IF NOT EXISTS pg_trgm');
     logger.command('CREATE EXTENSION pg_trgm (trigram matching)');
 
-    await client.query('CREATE EXTENSION IF NOT EXISTS postgis');
-    logger.command('CREATE EXTENSION postgis (geospatial)');
+    // Try to enable PostGIS, but continue if not available
+    let postgisAvailable = false;
+    try {
+      await client.query('CREATE EXTENSION IF NOT EXISTS postgis');
+      logger.command('CREATE EXTENSION postgis (geospatial)');
+      postgisAvailable = true;
+    } catch (error) {
+      logger.info('PostGIS extension not available (requires postgis/postgis Docker image). Skipping geospatial demo.\n');
+    }
 
     // Create posts table
     logger.step('Step 1: Create posts table with tsvector, JSONB, and geography');
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS posts (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(50) NOT NULL,
-        content TEXT NOT NULL,
-        content_tsv tsvector,
-        metadata JSONB,
-        location geography(POINT),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    logger.command('CREATE TABLE posts (id, username, content, content_tsv, metadata, location)');
-    logger.production('tsvector: Optimized text search with stemming and ranking');
-    logger.production('JSONB: Binary JSON with indexable operators');
-    logger.production('geography: PostGIS type for lat/lon coordinates\n');
+    if (postgisAvailable) {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS posts (
+          id SERIAL PRIMARY KEY,
+          username VARCHAR(50) NOT NULL,
+          content TEXT NOT NULL,
+          content_tsv tsvector,
+          metadata JSONB,
+          location geography(POINT),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      logger.command('CREATE TABLE posts (id, username, content, content_tsv, metadata, location)');
+      logger.production('tsvector: Optimized text search with stemming and ranking');
+      logger.production('JSONB: Binary JSON with indexable operators');
+      logger.production('geography: PostGIS type for lat/lon coordinates\n');
+    } else {
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS posts (
+          id SERIAL PRIMARY KEY,
+          username VARCHAR(50) NOT NULL,
+          content TEXT NOT NULL,
+          content_tsv tsvector,
+          metadata JSONB,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+      logger.command('CREATE TABLE posts (id, username, content, content_tsv, metadata)');
+      logger.production('tsvector: Optimized text search with stemming and ranking');
+      logger.production('JSONB: Binary JSON with indexable operators\n');
+    }
 
     // Insert sample data
     logger.step('Step 2: Insert sample posts with diverse content');
@@ -75,27 +98,47 @@ export const advancedIndexingExample: PostgreSQLExample = {
       },
     ];
 
-    for (const post of samplePosts) {
-      await client.query(`
-        INSERT INTO posts (username, content, content_tsv, metadata, location)
-        VALUES (
-          $1,
-          $2,
-          to_tsvector('english', $2),
-          $3,
-          ST_MakePoint($5, $4)::geography
-        )
-      `, [
-        post.username,
-        post.content,
-        JSON.stringify(post.metadata),
-        post.lat,
-        post.lon,
-      ]);
+    if (postgisAvailable) {
+      for (const post of samplePosts) {
+        await client.query(`
+          INSERT INTO posts (username, content, content_tsv, metadata, location)
+          VALUES (
+            $1,
+            $2,
+            to_tsvector('english', $2),
+            $3,
+            ST_MakePoint($5, $4)::geography
+          )
+        `, [
+          post.username,
+          post.content,
+          JSON.stringify(post.metadata),
+          post.lat,
+          post.lon,
+        ]);
+      }
+      logger.command('INSERT 5 posts with to_tsvector, JSONB metadata, and geography points');
+      logger.production('to_tsvector: Converts text to normalized, stemmed tokens');
+      logger.production('ST_MakePoint: Creates PostGIS point from lon, lat (note order!)\n');
+    } else {
+      for (const post of samplePosts) {
+        await client.query(`
+          INSERT INTO posts (username, content, content_tsv, metadata)
+          VALUES (
+            $1,
+            $2,
+            to_tsvector('english', $2),
+            $3
+          )
+        `, [
+          post.username,
+          post.content,
+          JSON.stringify(post.metadata),
+        ]);
+      }
+      logger.command('INSERT 5 posts with to_tsvector and JSONB metadata');
+      logger.production('to_tsvector: Converts text to normalized, stemmed tokens\n');
     }
-    logger.command('INSERT 5 posts with to_tsvector, JSONB metadata, and geography points');
-    logger.production('to_tsvector: Converts text to normalized, stemmed tokens');
-    logger.production('ST_MakePoint: Creates PostGIS point from lon, lat (note order!)\n');
 
     const count = await client.query('SELECT COUNT(*) FROM posts');
     logger.assert(count.rows[0].count === '5', '5 posts inserted');
@@ -222,72 +265,75 @@ export const advancedIndexingExample: PostgreSQLExample = {
     logger.info(JSON.stringify(pathQuery.rows, null, 2));
     logger.production('?: Key exists; @>: Contains; ->: Get JSON object; ->>: Get text\n');
 
-    // Step 9: Geospatial queries without index
-    logger.step('Step 9: PostGIS geospatial queries without GiST index');
-    const sfLat = 37.7749;
-    const sfLon = -122.4194;
-    const radiusMeters = 10000; // 10km
+    // Step 9: Geospatial queries (only if PostGIS is available)
+    if (postgisAvailable) {
+      logger.step('Step 9: PostGIS geospatial queries without GiST index');
+      const sfLat = 37.7749;
+      const sfLon = -122.4194;
+      const radiusMeters = 10000; // 10km
 
-    const noIndexGeo = await client.query(`
-      SELECT
-        username,
-        content,
-        ST_Distance(location, ST_MakePoint($2, $1)::geography) / 1000 as distance_km
-      FROM posts
-      WHERE ST_DWithin(location, ST_MakePoint($2, $1)::geography, $3)
-      ORDER BY location <-> ST_MakePoint($2, $1)::geography
-    `, [sfLat, sfLon, radiusMeters]);
-    logger.command(`SELECT ... WHERE ST_DWithin(location, SF_point, 10km)`);
-    logger.command('Results:', JSON.stringify(noIndexGeo.rows, null, 2));
-    logger.production('ST_DWithin: Distance within radius filter');
-    logger.production('ST_Distance: Calculate actual distance between points');
-    logger.production('<->: Distance operator for ordering\n');
+      const noIndexGeo = await client.query(`
+        SELECT
+          username,
+          content,
+          ST_Distance(location, ST_MakePoint($2, $1)::geography) / 1000 as distance_km
+        FROM posts
+        WHERE ST_DWithin(location, ST_MakePoint($2, $1)::geography, $3)
+        ORDER BY location <-> ST_MakePoint($2, $1)::geography
+      `, [sfLat, sfLon, radiusMeters]);
+      logger.command(`SELECT ... WHERE ST_DWithin(location, SF_point, 10km)`);
+      logger.command('Results:', JSON.stringify(noIndexGeo.rows, null, 2));
+      logger.production('ST_DWithin: Distance within radius filter');
+      logger.production('ST_Distance: Calculate actual distance between points');
+      logger.production('<->: Distance operator for ordering\n');
 
-    const explainNoGiST = await client.query(`
-      EXPLAIN SELECT username, content
-      FROM posts
-      WHERE ST_DWithin(location, ST_MakePoint($2, $1)::geography, $3)
-    `, [sfLat, sfLon, radiusMeters]);
-    logger.command('EXPLAIN (no GiST index):', explainNoGiST.rows.map(r => r['QUERY PLAN']).join('\n'));
+      const explainNoGiST = await client.query(`
+        EXPLAIN SELECT username, content
+        FROM posts
+        WHERE ST_DWithin(location, ST_MakePoint($2, $1)::geography, $3)
+      `, [sfLat, sfLon, radiusMeters]);
+      logger.command('EXPLAIN (no GiST index):', explainNoGiST.rows.map(r => r['QUERY PLAN']).join('\n'));
 
-    // Step 10: Create GiST index for geospatial queries
-    logger.step('Step 10: Create GiST index for geospatial queries');
-    await client.query(`
-      CREATE INDEX idx_posts_location ON posts USING GIST(location)
-    `);
-    logger.command('CREATE INDEX ... USING GIST(location)');
-    logger.production('GiST (Generalized Search Tree): For geometric and spatial data');
-    logger.production('Supports PostGIS types, ranges, and custom distance operators\n');
+      // Step 10: Create GiST index for geospatial queries
+      logger.step('Step 10: Create GiST index for geospatial queries');
+      await client.query(`
+        CREATE INDEX idx_posts_location ON posts USING GIST(location)
+      `);
+      logger.command('CREATE INDEX ... USING GIST(location)');
+      logger.production('GiST (Generalized Search Tree): For geometric and spatial data');
+      logger.production('Supports PostGIS types, ranges, and custom distance operators\n');
 
-    const explainWithGiST = await client.query(`
-      EXPLAIN SELECT username, content
-      FROM posts
-      WHERE ST_DWithin(location, ST_MakePoint($2, $1)::geography, $3)
-    `, [sfLat, sfLon, radiusMeters]);
-    logger.command('EXPLAIN (with GiST):', explainWithGiST.rows.map(r => r['QUERY PLAN']).join('\n'));
+      const explainWithGiST = await client.query(`
+        EXPLAIN SELECT username, content
+        FROM posts
+        WHERE ST_DWithin(location, ST_MakePoint($2, $1)::geography, $3)
+      `, [sfLat, sfLon, radiusMeters]);
+      logger.command('EXPLAIN (with GiST):', explainWithGiST.rows.map(r => r['QUERY PLAN']).join('\n'));
 
-    // Step 11: Combined query using all indexes
-    logger.step('Step 11: Combined query using all specialized indexes');
-    const combined = await client.query(`
-      SELECT
-        username,
-        content,
-        metadata->'tags' as tags,
-        ST_Distance(location, ST_MakePoint($3, $2)::geography) / 1000 as distance_km,
-        ts_rank(content_tsv, to_tsquery('english', $1)) as relevance
-      FROM posts
-      WHERE
-        content_tsv @@ to_tsquery('english', $1)
-        AND metadata @> '{"tags": ["database"]}'
-        AND ST_DWithin(location, ST_MakePoint($3, $2)::geography, $4)
-      ORDER BY relevance DESC, distance_km ASC
-    `, ['database', sfLat, sfLon, 50000]); // 50km radius
-    logger.command('Combined query: full-text + JSONB + geospatial filters');
-    logger.command('Results:', JSON.stringify(combined.rows, null, 2));
-    logger.production('Query optimizer can use multiple specialized indexes efficiently\n');
+      // Step 11: Combined query using all indexes
+      logger.step('Step 11: Combined query using all specialized indexes');
+      const combined = await client.query(`
+        SELECT
+          username,
+          content,
+          metadata->'tags' as tags,
+          ST_Distance(location, ST_MakePoint($3, $2)::geography) / 1000 as distance_km,
+          ts_rank(content_tsv, to_tsquery('english', $1)) as relevance
+        FROM posts
+        WHERE
+          content_tsv @@ to_tsquery('english', $1)
+          AND metadata @> '{"tags": ["database"]}'
+          AND ST_DWithin(location, ST_MakePoint($3, $2)::geography, $4)
+        ORDER BY relevance DESC, distance_km ASC
+      `, ['database', sfLat, sfLon, 50000]); // 50km radius
+      logger.command('Combined query: full-text + JSONB + geospatial filters');
+      logger.command('Results:', JSON.stringify(combined.rows, null, 2));
+      logger.production('Query optimizer can use multiple specialized indexes efficiently\n');
+    }
 
     // Show all specialized indexes
-    logger.step('Step 12: Review all specialized indexes');
+    const stepNumber = postgisAvailable ? 'Step 12' : 'Step 9';
+    logger.step(`${stepNumber}: Review all specialized indexes`);
     const indexesResult = await client.query(`
       SELECT
         tablename,
@@ -316,6 +362,7 @@ export const advancedIndexingExample: PostgreSQLExample = {
     logger.production('- Consider jsonb_path_ops for containment-only queries (smaller index)');
 
     logger.production('\nPostGIS:');
+    logger.production('- PostGIS requires postgis/postgis Docker image (not included in postgres:16-alpine)');
     logger.production('- PostgreSQL PostGIS: Good for most geospatial needs');
     logger.production('- Specialized geo DBs (MongoDB, Elasticsearch): For massive scale');
     logger.production('- GiST index maintenance cost increases with data volume');
