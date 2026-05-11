@@ -109,90 +109,92 @@ async function updateConfig(key: string, value: string) {
 }
 ```
 
-## Config Change Monitoring
+### Config Change Monitoring
 
-Configuration changes in ZooKeeper are monitored through watches, which provide real-time notifications:
-
+Monitor config changes for auditing:
 ```typescript
-class ConfigMonitor {
-  setupWatch(path: string) {
-    zk.getData(path, (event) => {
-      if (event.type === 'CHANGED') {
-        console.log('Configuration updated');
-        this.reloadConfig(path);
-      }
-    });
-  }
-}
+zk.getData('/config/maintenance_mode', (event) => {
+  audit.log({
+    action: 'CONFIG_CHANGE',
+    key: 'maintenance_mode',
+    timestamp: Date.now(),
+    user: getCurrentUser()
+  });
+});
 ```
-
-Watches can be set on:
-- Individual configuration nodes
-- Parent configuration directories
-- Recursive watches for comprehensive monitoring
 
 ## When NOT to Use ZooKeeper
 
-Despite its powerful configuration management capabilities, ZooKeeper isn't suitable for all scenarios:
+### Use Environment Variables When:
+- Config is static per deployment
+- No need for runtime changes
+- Following 12-factor app principles
+- Deploying to Kubernetes (ConfigMaps)
 
-**Avoid ZooKeeper When:**
-- Handling extremely large configuration datasets
-- Requiring complex query capabilities
-- Needing persistent, long-term storage
-- Managing high-frequency configuration updates
-- Dealing with unstructured or complex configuration formats
+### Use Cloud Config Services When:
+- **AWS:** Parameter Store, AppConfig
+- **Azure:** App Configuration
+- **GCP:** Secret Manager, Runtime Config
 
-**Better Alternatives:**
-- Large datasets: Use databases like PostgreSQL
-- Complex queries: Use document stores like MongoDB
-- Secrets management: Use HashiCorp Vault
-- High-frequency updates: Consider message queues
+Benefits:
+- Fully managed (no ops)
+- Native IAM integration
+- Built-in versioning and rollback
+- Audit logging included
+
+### Use Database When:
+- Per-tenant configuration
+- Complex config structure
+- Need for queries/filtering
+- Large configuration datasets
 
 ## Alternatives Comparison
 
-| Feature | ZooKeeper | etcd | Consul | Redis |
-|---------|-----------|------|--------|-------|
-| Configuration Storage | Excellent | Good | Excellent | Fair |
-| Watch Mechanism | Native | Native | Limited | Limited |
-| Consistency | Strong | Strong | Strong | Eventual |
-| Performance | Moderate | High | High | Very High |
-| Complex Queries | Limited | Limited | Good | Good |
+| Feature | ZooKeeper | Env Vars | AWS Parameter Store | Consul |
+|---------|-----------|----------|---------------------|--------|
+| Runtime changes | Yes | No | Yes | Yes |
+| Watches/push | Yes | No | Poll | Yes |
+| Versioning | Basic | No | Full | Yes |
+| Ops complexity | High | None | None | Medium |
+| Best for | Apache ecosystem | Static config | AWS apps | Service mesh |
 
 ## Interview Tips
 
-**Configuration Management Focus Areas:**
-- Understand watch mechanisms
-- Explain version-based updates
-- Discuss trade-offs of centralized configuration
-- Know ZooKeeper's strengths and limitations
-- Demonstrate atomic configuration updates
+When discussing configuration management:
 
-**Key Concepts to Prepare:**
-- Distributed configuration patterns
-- Real-time configuration propagation
-- Consistency in distributed systems
-- Optimistic locking strategies
-- Service discovery integration
+1. **Distinguish static vs dynamic config:**
+   - Static: Environment variables, baked into images
+   - Dynamic: ZooKeeper, Parameter Store, Consul
+
+2. **Mention validation:**
+   - Never blindly accept config changes
+   - Validate before storing and on read
+
+3. **Discuss alternatives:**
+   - For cloud: use native solutions (Parameter Store)
+   - For K8s: use ConfigMaps
+   - ZooKeeper mainly when already in stack
+
+4. **Explain watch pattern:**
+   - Services maintain local cache
+   - Watches trigger cache invalidation
+   - Reduces ZooKeeper query load
 
 ## Common Interview Questions
 
-1. "How does ZooKeeper ensure configuration consistency?"
-   - Explain version numbers and optimistic locking
-   - Discuss atomic multi-key updates
+**Q: ZooKeeper vs environment variables for configuration?**  
+A: Env vars for static deployment config, ZooKeeper for dynamic runtime config. Env vars require redeployment to change; ZooKeeper enables instant propagation without restarts.
 
-2. "What makes ZooKeeper different from other configuration management tools?"
-   - Highlight watch mechanisms
-   - Emphasize strong consistency
-   - Discuss leader election and consensus protocols
+**Q: How do you handle config validation?**  
+A: Validate on write (reject invalid config) and on read (defensive). Store schema version with config to handle migrations.
 
-3. "When would you choose ZooKeeper over alternatives?"
-   - Discuss use cases in microservices
-   - Explain scenarios requiring real-time updates
-   - Compare with other distributed systems
+**Q: What if ZooKeeper is down?**  
+A: Services cache config locally and continue with last known good config. Watches don't fire but services remain operational. This is why ZooKeeper should be highly available (3-5 node ensemble).
+
+**Q: When would you use AWS Parameter Store instead?**  
+A: For cloud-native apps, Parameter Store is better: fully managed, no ops, native IAM, built-in audit logging. Use ZooKeeper only if already in stack (Kafka, HBase) or need cross-cloud portability.
 
 ## Further Reading
 
-- ZooKeeper: Distributed Process Management (O'Reilly)
-- Apache ZooKeeper Documentation
-- Designing Distributed Systems (Martin Kleppmann)
-- Distributed Consensus Algorithms
+- [Configuration Management Patterns](https://www.oreilly.com/library/view/site-reliability-engineering/9781491929117/ch03.html)
+- [12-Factor Config](https://12factor.net/config)
