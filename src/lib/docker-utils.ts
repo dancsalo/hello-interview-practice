@@ -65,6 +65,15 @@ export class DockerUtils {
         healthy: false,
         url: 'http://localhost:8080',
       },
+      {
+        name: 'Flink JobManager',
+        healthy: false,
+        url: 'http://localhost:8081',
+      },
+      {
+        name: 'Flink TaskManager',
+        healthy: false,
+      },
     ];
 
     // Map display names to actual docker-compose service names
@@ -75,6 +84,8 @@ export class DockerUtils {
       'Kafka': 'kafka',
       'Zookeeper': 'zookeeper',
       'Kafka UI': 'kafka-ui',
+      'Flink JobManager': 'flink-jobmanager',
+      'Flink TaskManager': 'flink-taskmanager',
     };
 
     for (const service of services) {
@@ -124,12 +135,33 @@ export class DockerUtils {
   }
 
   /**
+   * Reset Flink by cancelling all running jobs
+   */
+  static async resetFlink(): Promise<void> {
+    try {
+      // Get all running job IDs
+      const { stdout } = await execAsync(
+        'curl -s http://localhost:8081/jobs | jq -r \'.jobs[] | select(.status == "RUNNING") | .id\''
+      );
+
+      const jobIds = stdout.trim().split('\n').filter(id => id.length > 0);
+
+      for (const jobId of jobIds) {
+        await execAsync(`curl -X PATCH http://localhost:8081/jobs/${jobId}`);
+      }
+    } catch (error) {
+      // No jobs to cancel or command failed - that's okay
+    }
+  }
+
+  /**
    * Reset all services
    */
   static async resetAll(): Promise<void> {
     await this.resetRedis();
     await this.resetPostgres();
     await this.resetKafka();
+    await this.resetFlink();
   }
 
   /**

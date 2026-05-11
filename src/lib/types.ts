@@ -25,6 +25,24 @@ export type RedisExample = Example<RedisClientType>;
 export type PostgreSQLExample = Example<Client>;
 export type KafkaExample = Example<any>;
 
+export interface FlinkExample {
+  name: string;
+  description: string;
+  run(client: any, logger: Logger): Promise<void>;
+}
+
+export interface FlinkJobSubmission {
+  jobId: string;
+  status: 'CREATED' | 'RUNNING' | 'FINISHED' | 'FAILED' | 'CANCELED';
+}
+
+export interface FlinkJobStatus {
+  jobId: string;
+  status: string;
+  startTime: number;
+  endTime?: number;
+}
+
 export interface TechnologyClient {
   connect(): Promise<void>;
   disconnect(): Promise<void>;
