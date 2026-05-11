@@ -6,7 +6,7 @@
   "scripts": {
     "start": "tsx src/cli.ts",
     "dev": "tsx watch src/cli.ts",
-    "test": "tsx scripts/test-redis-examples.ts",
+    "test": "npm run test:redis && npm run test:elasticsearch",
     "test:redis": "tsx scripts/test-redis-examples.ts",
     "test:elasticsearch": "tsx scripts/test-elasticsearch-examples.ts",
     "test:watch": "NON_INTERACTIVE=true tsx watch scripts/test-redis-examples.ts",

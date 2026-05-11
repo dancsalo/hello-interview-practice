@@ -7,13 +7,16 @@ An interactive learning platform for mastering system design technologies throug
 Get up and running in under 60 seconds:
 
 ```bash
-# 1. Start Docker services
+# 1. Create environment file (optional, uses defaults if skipped)
+cp .env.example .env
+
+# 2. Start Docker services
 docker-compose up -d
 
-# 2. Install dependencies
+# 3. Install dependencies
 npm install
 
-# 3. Launch interactive CLI
+# 4. Launch interactive CLI
 npm start
 ```
 
