@@ -30,7 +30,8 @@ That's it! The CLI will guide you through running examples for each technology.
 
 - ✅ **Redis** (10 examples) - Cache, distributed locks, leaderboards, rate limiting, pub/sub, and more
 - ✅ **PostgreSQL** (7 examples) - SQL operations, transactions, indexing, read/write scaling, optimization
-- 🔜 **Kafka** - Coming soon
+- ✅ **ZooKeeper** (8 examples) - Coordination, leader election, distributed locks, service discovery, configuration
+- ✅ **Kafka** (2 examples) - Event streaming, partitioning, consumer groups
 - 🔜 **Cassandra** - Coming soon
 - 🔜 **Elasticsearch** - Coming soon
 
@@ -73,13 +74,22 @@ hello-interview-practice/
 │       ├── redis/              # Redis examples
 │       │   ├── README.md       # Redis overview
 │       │   └── examples/       # 10 runnable examples
-│       └── postgresql/         # PostgreSQL examples
-│           └── examples/       # 7 runnable examples
+│       ├── postgresql/         # PostgreSQL examples
+│       │   └── examples/       # 7 runnable examples
+│       ├── zookeeper/          # ZooKeeper examples
+│       │   ├── README.md       # ZooKeeper overview
+│       │   └── examples/       # 8 runnable examples
+│       └── kafka/              # Kafka examples
+│           └── examples/       # 2 runnable examples
 ├── scripts/
 │   ├── test-redis-examples.ts     # Test Redis examples
 │   ├── test-postgres-examples.ts  # Test PostgreSQL examples
+│   ├── test-zookeeper-examples.ts # Test ZooKeeper examples
+│   ├── test-kafka-examples.ts     # Test Kafka examples
 │   ├── reset-redis.ts             # Reset Redis data
 │   ├── reset-postgres.ts          # Reset PostgreSQL data
+│   ├── reset-zookeeper.ts         # Reset ZooKeeper data
+│   ├── reset-kafka.ts             # Reset Kafka data
 │   └── reset-all.ts               # Reset all services
 ├── docs/superpowers/           # Technology documentation
 └── docker-compose.yml          # All services
@@ -90,12 +100,16 @@ hello-interview-practice/
 ```bash
 npm start                # Launch interactive CLI
 npm run dev              # Development mode with watch
-npm test                 # Run Redis integration tests
+npm test                 # Run all integration tests
 npm run test:redis       # Run Redis integration tests
 npm run test:postgres    # Run PostgreSQL integration tests
+npm run test:zookeeper   # Run ZooKeeper integration tests
+npm run test:kafka       # Run Kafka integration tests
 npm run reset            # Reset all service data
 npm run reset:redis      # Reset only Redis data
 npm run reset:postgres   # Reset only PostgreSQL data
+npm run reset:zookeeper  # Reset only ZooKeeper data
+npm run reset:kafka      # Reset only Kafka data
 npm run docker:up        # Start Docker services
 npm run docker:down      # Stop Docker services
 npm run docker:reset     # Recreate services from scratch
@@ -148,6 +162,30 @@ Each example includes:
 
 See `docs/superpowers/POSTGRESQL.md` for more details.
 
+## ZooKeeper Examples
+
+The ZooKeeper technology includes 8 comprehensive examples:
+
+1. **Basics** - ZNode types (persistent, ephemeral, sequential), CRUD operations
+2. **Watches** - Change notifications, data/child/existence watches, one-time triggers
+3. **Configuration Management** - Centralized config, real-time propagation, versioning
+4. **Service Discovery** - Registration with ephemeral nodes, automatic failure detection
+5. **Leader Election** - Sequential ephemeral pattern, watching predecessor, automatic failover
+6. **Distributed Locks** - FIFO lock acquisition, deadlock prevention, fencing tokens
+7. **Session Management** - Session lifecycle, connection loss vs expiration, recovery patterns
+8. **Ensemble & Consensus** - ZAB protocol, quorum-based writes, fault tolerance
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key ZooKeeper operations
+- Production considerations
+- Comparison with alternatives (etcd, Consul, Redis)
+- Further reading
+
+See `src/technologies/zookeeper/README.md` for more details.
+
 ## Services
 
 ### Redis Stack
@@ -160,6 +198,16 @@ See `docs/superpowers/POSTGRESQL.md` for more details.
 - **User**: demo / demo
 - **Database**: ecommerce
 - **Image**: postgres:16-alpine
+
+### ZooKeeper
+- **Port**: 2181
+- **Image**: confluentinc/cp-zookeeper:7.5.0
+- **Session Timeout**: 10 seconds (configurable via ZOOKEEPER_SESSION_TIMEOUT)
+
+### Kafka
+- **Port**: 9092
+- **Image**: confluentinc/cp-kafka:7.5.0
+- **Depends on**: ZooKeeper
 
 Additional services will be added as more technologies are implemented.
 
@@ -180,6 +228,8 @@ Services use these ports by default:
 - 6379 (Redis)
 - 8001 (RedisInsight)
 - 5433 (PostgreSQL)
+- 2181 (ZooKeeper)
+- 9092 (Kafka)
 
 To customize, create a `.env` file:
 
@@ -187,6 +237,8 @@ To customize, create a `.env` file:
 REDIS_PORT=6380
 REDIS_INSIGHT_PORT=8002
 POSTGRES_PORT=5433
+ZOOKEEPER_PORT=2182
+KAFKA_PORT=9093
 ```
 
 ### Services not healthy
@@ -225,6 +277,8 @@ npm run reset
 # Or reset specific technology
 npm run reset:redis
 npm run reset:postgres
+npm run reset:zookeeper
+npm run reset:kafka
 ```
 
 ## Learning Path
@@ -237,11 +291,11 @@ npm run reset:postgres
 5. Explore other patterns based on interest
 
 **For interview prep:**
-1. Run all Redis and PostgreSQL examples to understand the patterns
+1. Run all examples (Redis, PostgreSQL, ZooKeeper, Kafka) to understand the patterns
 2. Read the production considerations in each example
-3. Try modifying examples to test edge cases
+3. Focus on ZooKeeper for distributed coordination questions (leader election, locks)
 4. Practice explaining tradeoffs out loud
-5. Review the technology docs in `docs/superpowers/`
+5. Review the technology docs in `docs/superpowers/` and technology READMEs
 
 **For building systems:**
 1. Understand when NOT to use each pattern
