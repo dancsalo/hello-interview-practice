@@ -35,38 +35,107 @@ export class DockerUtils {
   }
 
   /**
+   * Check Redis health
+   */
+  static async checkRedisHealth(): Promise<ServiceHealth> {
+    try {
+      const healthy = await this.waitForService('redis', 5000);
+      return {
+        name: 'Redis',
+        healthy,
+      };
+    } catch (error) {
+      return {
+        name: 'Redis',
+        healthy: false,
+      };
+    }
+  }
+
+  /**
+   * Check PostgreSQL health
+   */
+  static async checkPostgresHealth(): Promise<ServiceHealth> {
+    try {
+      const healthy = await this.waitForService('postgres', 5000);
+      return {
+        name: 'PostgreSQL',
+        healthy,
+      };
+    } catch (error) {
+      return {
+        name: 'PostgreSQL',
+        healthy: false,
+      };
+    }
+  }
+
+  /**
+   * Check Elasticsearch health
+   */
+  static async checkElasticsearchHealth(): Promise<ServiceHealth> {
+    try {
+      const response = await fetch('http://localhost:9200/_cluster/health');
+      if (!response.ok) {
+        return {
+          name: 'Elasticsearch',
+          healthy: false,
+          url: 'http://localhost:9200',
+        };
+      }
+      const data = await response.json() as { status?: string };
+      return {
+        name: 'Elasticsearch',
+        healthy: data.status !== 'red',
+        url: 'http://localhost:9200',
+      };
+    } catch (error) {
+      return {
+        name: 'Elasticsearch',
+        healthy: false,
+        url: 'http://localhost:9200',
+      };
+    }
+  }
+
+  /**
+   * Check Kibana health
+   */
+  static async checkKibanaHealth(): Promise<ServiceHealth> {
+    try {
+      const response = await fetch('http://localhost:5601/api/status');
+      if (!response.ok) {
+        return {
+          name: 'Kibana',
+          healthy: false,
+          url: 'http://localhost:5601',
+        };
+      }
+      const data = await response.json() as { status?: { overall?: { level?: string } } };
+      return {
+        name: 'Kibana',
+        healthy: data.status?.overall?.level === 'available',
+        url: 'http://localhost:5601',
+      };
+    } catch (error) {
+      return {
+        name: 'Kibana',
+        healthy: false,
+        url: 'http://localhost:5601',
+      };
+    }
+  }
+
+  /**
    * Check health of all required services
    */
   static async checkServices(): Promise<ServiceHealth[]> {
-    const services: ServiceHealth[] = [
-      {
-        name: 'Redis',
-        healthy: false,
-      },
-      {
-        name: 'PostgreSQL',
-        healthy: false,
-      },
-      {
-        name: 'RedisInsight',
-        healthy: false,
-        url: 'http://localhost:8001',
-      },
-    ];
-
-    // Map display names to actual docker-compose service names
-    const serviceNameMap: Record<string, string> = {
-      'Redis': 'redis',
-      'PostgreSQL': 'postgres',
-      'RedisInsight': 'redis-insight',
-    };
-
-    for (const service of services) {
-      const serviceName = serviceNameMap[service.name];
-      service.healthy = await this.waitForService(serviceName, 5000);
-    }
-
-    return services;
+    return Promise.all([
+      this.checkRedisHealth(),
+      this.checkElasticsearchHealth(),
+      this.checkKibanaHealth(),
+      this.checkPostgresHealth(),
+    ]);
   }
 
   /**
