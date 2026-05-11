@@ -2,11 +2,12 @@ import { select, confirm } from '@inquirer/prompts';
 import chalk from 'chalk';
 import ora from 'ora';
 import { RedisClient } from './technologies/redis/client.js';
+import { PostgreSQLClient } from './technologies/postgresql/client.js';
 import { KafkaClient } from './technologies/kafka/client.js';
 import { Logger } from './lib/logger.js';
 import { StepByStepLogger } from './lib/step-by-step-logger.js';
 import { DockerUtils } from './lib/docker-utils.js';
-import type { Example, RedisExample } from './lib/types.js';
+import type { Example, RedisExample, PostgreSQLExample } from './lib/types.js';
 
 // Type guard to check if an example is a RedisExample
 function isRedisExample(example: Example): example is RedisExample {
@@ -25,11 +26,20 @@ import { pubSubExample } from './technologies/redis/examples/08-pubsub/index.js'
 import { bloomFiltersExample } from './technologies/redis/examples/09-bloom-filters/index.js';
 import { timeSeriesExample } from './technologies/redis/examples/10-time-series/index.js';
 
+// Import all PostgreSQL examples
+import { basicsExample as pgBasicsExample } from './technologies/postgresql/examples/01-basics/index.js';
+import { transactionsExample } from './technologies/postgresql/examples/02-transactions/index.js';
+import { indexingExample } from './technologies/postgresql/examples/03-indexing/index.js';
+import { advancedIndexingExample } from './technologies/postgresql/examples/04-advanced-indexing/index.js';
+import { readScalingExample } from './technologies/postgresql/examples/05-read-scaling/index.js';
+import { writeScalingExample } from './technologies/postgresql/examples/06-write-scaling/index.js';
+import { optimizationExample } from './technologies/postgresql/examples/07-optimization/index.js';
+
 // Import all Kafka examples
 import { basicsExample as kafkaBasicsExample } from './technologies/kafka/examples/01-basics/index.js';
 import { partitioningExample } from './technologies/kafka/examples/02-partitioning/index.js';
 
-const REDIS_EXAMPLES: Example[] = [
+const REDIS_EXAMPLES: RedisExample[] = [
   basicsExample,
   cacheExample,
   distributedLockExample,
@@ -42,6 +52,16 @@ const REDIS_EXAMPLES: Example[] = [
   timeSeriesExample,
 ];
 
+const POSTGRES_EXAMPLES: PostgreSQLExample[] = [
+  pgBasicsExample,
+  transactionsExample,
+  indexingExample,
+  advancedIndexingExample,
+  readScalingExample,
+  writeScalingExample,
+  optimizationExample,
+];
+
 const KAFKA_EXAMPLES: Example[] = [
   kafkaBasicsExample,
   partitioningExample,
@@ -49,12 +69,14 @@ const KAFKA_EXAMPLES: Example[] = [
 
 class CLI {
   private redisClient: RedisClient;
+  private postgresClient: PostgreSQLClient;
   private kafkaClient: KafkaClient;
   private logger: Logger;
   private shuttingDown = false;
 
   constructor() {
     this.redisClient = new RedisClient();
+    this.postgresClient = new PostgreSQLClient();
     this.kafkaClient = new KafkaClient();
     this.logger = new Logger();
     this.setupSignalHandlers();
@@ -71,6 +93,8 @@ class CLI {
       try {
         await this.redisClient.disconnect();
         this.logger.success('Disconnected from Redis');
+        await this.postgresClient.disconnect();
+        this.logger.success('Disconnected from PostgreSQL');
         await this.kafkaClient.disconnect();
         this.logger.success('Disconnected from Kafka');
       } catch (error) {
@@ -141,6 +165,46 @@ class CLI {
     }
   }
 
+  private async connectPostgreSQL(): Promise<boolean> {
+    const spinner = ora('Connecting to PostgreSQL...').start();
+
+    try {
+      await this.postgresClient.connect();
+      const healthy = await this.postgresClient.healthCheck();
+
+      if (healthy) {
+        spinner.succeed('Connected to PostgreSQL');
+        return true;
+      } else {
+        spinner.fail('PostgreSQL health check failed');
+        return false;
+      }
+    } catch (error) {
+      spinner.fail(`Failed to connect to PostgreSQL: ${error}`);
+      return false;
+    }
+  }
+
+  private async connectKafka(): Promise<boolean> {
+    const spinner = ora('Connecting to Kafka...').start();
+
+    try {
+      await this.kafkaClient.connect();
+      const healthy = await this.kafkaClient.healthCheck();
+
+      if (healthy) {
+        spinner.succeed('Connected to Kafka');
+        return true;
+      } else {
+        spinner.fail('Kafka health check failed');
+        return false;
+      }
+    } catch (error) {
+      spinner.fail(`Failed to connect to Kafka: ${error}`);
+      return false;
+    }
+  }
+
   private async showTechnologyMenu(): Promise<string | null> {
     console.log();
     const technology = await select({
@@ -155,9 +219,8 @@ class CLI {
           value: 'kafka',
         },
         {
-          name: '🐘 PostgreSQL (Coming soon)',
+          name: '🐘 PostgreSQL (7 examples)',
           value: 'postgresql',
-          disabled: true,
         },
         {
           name: '🔍 Elasticsearch (Coming soon)',
@@ -174,7 +237,7 @@ class CLI {
     return technology === 'exit' ? null : technology;
   }
 
-  private async showRedisExamplesMenu(): Promise<Example | null> {
+  private async showRedisExamplesMenu(): Promise<RedisExample | null> {
     console.log();
     const choices = REDIS_EXAMPLES.map((example, idx) => ({
       name: `${String(idx + 1).padStart(2, '0')}. ${example.name}`,
@@ -190,6 +253,29 @@ class CLI {
 
     const selected = await select({
       message: 'Select a Redis example:',
+      choices,
+      pageSize: 12,
+    });
+
+    return selected;
+  }
+
+  private async showPostgresExamplesMenu(): Promise<PostgreSQLExample | null> {
+    console.log();
+    const choices = POSTGRES_EXAMPLES.map((example, idx) => ({
+      name: `${String(idx + 1).padStart(2, '0')}. ${example.name}`,
+      value: example,
+      description: example.description,
+    }));
+
+    choices.push({
+      name: '← Back to technologies',
+      value: null as any,
+      description: 'Return to main menu',
+    });
+
+    const selected = await select({
+      message: 'Select a PostgreSQL example:',
       choices,
       pageSize: 12,
     });
@@ -220,27 +306,7 @@ class CLI {
     return selected;
   }
 
-  private async connectKafka(): Promise<boolean> {
-    const spinner = ora('Connecting to Kafka...').start();
-
-    try {
-      await this.kafkaClient.connect();
-      const healthy = await this.kafkaClient.healthCheck();
-
-      if (healthy) {
-        spinner.succeed('Connected to Kafka');
-        return true;
-      } else {
-        spinner.fail('Kafka health check failed');
-        return false;
-      }
-    } catch (error) {
-      spinner.fail(`Failed to connect to Kafka: ${error}`);
-      return false;
-    }
-  }
-
-  private async runExample(example: Example, technology: string): Promise<void> {
+  private async runExample(example: Example<any>, technology: string): Promise<void> {
     console.log();
     console.log(chalk.bold.cyan('═'.repeat(70)));
     console.log(chalk.bold.cyan(`  Running: ${example.name}`));
@@ -252,6 +318,8 @@ class CLI {
 
       if (technology === 'kafka') {
         await example.run(this.kafkaClient as any, steppingLogger);
+      } else if (technology === 'postgresql') {
+        await example.run(this.postgresClient.getClient() as any, steppingLogger);
       } else {
         const client = this.redisClient.getClient();
         await example.run(client, steppingLogger);
@@ -263,7 +331,7 @@ class CLI {
       if (isRedisExample(example) && example.cleanup) {
         const client = this.redisClient.getClient();
         const spinner = ora('Cleaning up...').start();
-        await example.cleanup(client);
+        await example.cleanup(client as any);
         spinner.succeed('Cleanup complete');
       }
     } catch (error) {
@@ -271,6 +339,8 @@ class CLI {
       this.logger.error(`Example failed: ${error}`);
       if (technology === 'kafka') {
         this.logger.warning('You may need to reset Kafka to recover.');
+      } else if (technology === 'postgresql') {
+        this.logger.warning('You may need to reset the database to recover.');
       } else {
         this.logger.warning('You may need to reset Redis to recover.');
       }
@@ -347,18 +417,6 @@ class CLI {
       process.exit(1);
     }
 
-    // Connect to Redis
-    const redisConnected = await this.connectRedis();
-    if (!redisConnected) {
-      process.exit(1);
-    }
-
-    // Connect to Kafka
-    const kafkaConnected = await this.connectKafka();
-    if (!kafkaConnected) {
-      this.logger.warning('Kafka is not available. Kafka examples will be disabled.');
-    }
-
     // Main loop
     try {
       while (true) {
@@ -370,6 +428,12 @@ class CLI {
         }
 
         if (technology === 'redis') {
+          // Connect to Redis
+          const redisConnected = await this.connectRedis();
+          if (!redisConnected) {
+            continue;
+          }
+
           let continueRedis = true;
 
           while (continueRedis) {
@@ -401,11 +465,57 @@ class CLI {
               case 'exit':
                 this.logger.info('Goodbye!');
                 await this.redisClient.disconnect();
+                await this.postgresClient.disconnect();
+                await this.kafkaClient.disconnect();
+                process.exit(0);
+            }
+          }
+        } else if (technology === 'postgresql') {
+          // Connect to PostgreSQL
+          const postgresConnected = await this.connectPostgreSQL();
+          if (!postgresConnected) {
+            continue;
+          }
+
+          let continuePostgres = true;
+
+          while (continuePostgres) {
+            const example = await this.showPostgresExamplesMenu();
+            if (!example) {
+              break;
+            }
+
+            await this.runExample(example, 'postgresql');
+
+            const action = await this.showPostExampleMenu();
+
+            switch (action) {
+              case 'another':
+                continue;
+
+              case 'reset-redis':
+                await this.handleReset('redis');
+                continue;
+
+              case 'reset-all':
+                await this.handleReset('all');
+                continue;
+
+              case 'back':
+                continuePostgres = false;
+                break;
+
+              case 'exit':
+                this.logger.info('Goodbye!');
+                await this.redisClient.disconnect();
+                await this.postgresClient.disconnect();
                 await this.kafkaClient.disconnect();
                 process.exit(0);
             }
           }
         } else if (technology === 'kafka') {
+          // Connect to Kafka
+          const kafkaConnected = await this.connectKafka();
           if (!kafkaConnected) {
             this.logger.error('Kafka is not available. Please check Docker services.');
             continue;
@@ -442,6 +552,7 @@ class CLI {
               case 'exit':
                 this.logger.info('Goodbye!');
                 await this.redisClient.disconnect();
+                await this.postgresClient.disconnect();
                 await this.kafkaClient.disconnect();
                 process.exit(0);
             }
@@ -457,6 +568,7 @@ class CLI {
       }
     } finally {
       await this.redisClient.disconnect();
+      await this.postgresClient.disconnect();
       await this.kafkaClient.disconnect();
     }
   }

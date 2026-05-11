@@ -29,8 +29,8 @@ That's it! The CLI will guide you through running examples for each technology.
 ### Technologies
 
 - ✅ **Redis** (10 examples) - Cache, distributed locks, leaderboards, rate limiting, pub/sub, and more
+- ✅ **PostgreSQL** (7 examples) - SQL operations, transactions, indexing, read/write scaling, optimization
 - 🔜 **Kafka** - Coming soon
-- 🔜 **PostgreSQL** - Coming soon
 - 🔜 **Cassandra** - Coming soon
 - 🔜 **Elasticsearch** - Coming soon
 
@@ -70,26 +70,35 @@ hello-interview-practice/
 │   ├── cli.ts                  # Main interactive menu
 │   ├── lib/                    # Shared utilities
 │   └── technologies/
-│       └── redis/              # Redis examples
-│           ├── README.md       # Redis overview
-│           └── examples/       # 10 runnable examples
+│       ├── redis/              # Redis examples
+│       │   ├── README.md       # Redis overview
+│       │   └── examples/       # 10 runnable examples
+│       └── postgresql/         # PostgreSQL examples
+│           └── examples/       # 7 runnable examples
 ├── scripts/
-│   ├── reset-redis.ts          # Reset Redis data
-│   └── reset-all.ts            # Reset all services
-├── key_technologies/           # Reference documentation
+│   ├── test-redis-examples.ts     # Test Redis examples
+│   ├── test-postgres-examples.ts  # Test PostgreSQL examples
+│   ├── reset-redis.ts             # Reset Redis data
+│   ├── reset-postgres.ts          # Reset PostgreSQL data
+│   └── reset-all.ts               # Reset all services
+├── docs/superpowers/           # Technology documentation
 └── docker-compose.yml          # All services
 ```
 
 ## Available Commands
 
 ```bash
-npm start              # Launch interactive CLI
-npm run dev            # Development mode with watch
-npm run reset          # Reset all service data
-npm run reset:redis    # Reset only Redis data
-npm run docker:up      # Start Docker services
-npm run docker:down    # Stop Docker services
-npm run docker:reset   # Recreate services from scratch
+npm start                # Launch interactive CLI
+npm run dev              # Development mode with watch
+npm test                 # Run Redis integration tests
+npm run test:redis       # Run Redis integration tests
+npm run test:postgres    # Run PostgreSQL integration tests
+npm run reset            # Reset all service data
+npm run reset:redis      # Reset only Redis data
+npm run reset:postgres   # Reset only PostgreSQL data
+npm run docker:up        # Start Docker services
+npm run docker:down      # Stop Docker services
+npm run docker:reset     # Recreate services from scratch
 ```
 
 ## Redis Examples
@@ -116,6 +125,28 @@ Each example includes:
 - Further reading
 
 See `src/technologies/redis/README.md` for more details.
+
+## PostgreSQL Examples
+
+The PostgreSQL technology includes 7 comprehensive examples:
+
+1. **Basics** - Core SQL operations (CRUD, joins, relationships, foreign keys)
+2. **Transactions** - ACID properties, isolation levels, concurrency control
+3. **Indexing** - B-tree indexes, performance impact, query optimization
+4. **Advanced Indexing** - Partial indexes, covering indexes, GIN/GiST
+5. **Read Scaling** - Replication strategies, read replicas, connection pooling
+6. **Write Scaling** - Sharding, partitioning, write optimization
+7. **Optimization** - Query planning, EXPLAIN, vacuum, performance tuning
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key SQL commands and PostgreSQL features
+- Production considerations
+- Further reading
+
+See `docs/superpowers/POSTGRESQL.md` for more details.
 
 ## Services
 
@@ -193,22 +224,24 @@ npm run reset
 
 # Or reset specific technology
 npm run reset:redis
+npm run reset:postgres
 ```
 
 ## Learning Path
 
 **For beginners:**
-1. Start with Redis Basics to understand core data structures
-2. Move to Cache to see practical application
-3. Try Distributed Lock to understand coordination
-4. Explore other patterns based on interest
+1. Start with PostgreSQL Basics to understand SQL fundamentals
+2. Try Redis Basics to see key-value data structures
+3. Explore Cache patterns to see practical application
+4. Learn about Transactions and Distributed Locks for coordination
+5. Explore other patterns based on interest
 
 **For interview prep:**
-1. Run all Redis examples to understand the patterns
-2. Read the production considerations in each README
+1. Run all Redis and PostgreSQL examples to understand the patterns
+2. Read the production considerations in each example
 3. Try modifying examples to test edge cases
 4. Practice explaining tradeoffs out loud
-5. Review the original docs in `key_technologies/redis/original.md`
+5. Review the technology docs in `docs/superpowers/`
 
 **For building systems:**
 1. Understand when NOT to use each pattern

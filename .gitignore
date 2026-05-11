@@ -9,3 +9,4 @@ dist/
 
 # Test results
 test-results.json
+test-results-postgres.json
