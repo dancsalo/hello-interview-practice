@@ -1,4 +1,3 @@
-#!/usr/bin/env tsx
 import chalk from 'chalk';
 import { DynamoDBClientWrapper } from '../src/technologies/dynamodb/client.js';
 import { Logger } from '../src/lib/logger.js';
@@ -12,7 +11,9 @@ const EXAMPLES = [
 ];
 
 async function testDynamoDBExamples() {
-  console.log(chalk.blue.bold('\n🧪 Testing DynamoDB Examples\n'));
+  console.log(chalk.blue.bold('
+🧪 Testing DynamoDB Examples
+'));
 
   const client = new DynamoDBClientWrapper();
   const logger = new Logger();
@@ -20,7 +21,8 @@ async function testDynamoDBExamples() {
   try {
     // Connect
     await client.connect();
-    console.log(chalk.green('✓ Connected to DynamoDB\n'));
+    console.log(chalk.green('✓ Connected to DynamoDB
+'));
 
     // Run each example
     let passed = 0;
@@ -28,14 +30,15 @@ async function testDynamoDBExamples() {
 
     for (const example of EXAMPLES) {
       try {
-        console.log(chalk.cyan(`\nRunning: ${example.name}`));
+        console.log(chalk.cyan('
+Running: ' + example.name));
         const clients = client.getClients();
         await example.run(clients, logger);
         passed++;
-        console.log(chalk.green(`✓ ${example.name} passed`));
+        console.log(chalk.green('✓ ' + example.name + ' passed'));
       } catch (error) {
         failed++;
-        console.error(chalk.red(`✗ ${example.name} failed: ${error}`));
+        console.error(chalk.red('✗ ' + example.name + ' failed: ' + error));
       }
 
       // Reset after each example
@@ -43,10 +46,12 @@ async function testDynamoDBExamples() {
     }
 
     // Summary
-    console.log(chalk.blue.bold('\n📊 Test Summary\n'));
-    console.log(chalk.green(`  Passed: ${passed}/${EXAMPLES.length}`));
+    console.log(chalk.blue.bold('
+📊 Test Summary
+'));
+    console.log(chalk.green('  Passed: ' + passed + '/' + EXAMPLES.length));
     if (failed > 0) {
-      console.log(chalk.red(`  Failed: ${failed}/${EXAMPLES.length}`));
+      console.log(chalk.red('  Failed: ' + failed + '/' + EXAMPLES.length));
     }
 
     await client.disconnect();
@@ -55,7 +60,8 @@ async function testDynamoDBExamples() {
       process.exit(1);
     }
   } catch (error) {
-    console.error(chalk.red(`\nFatal error: ${error}`));
+    console.error(chalk.red('
+Fatal error: ' + error));
     await client.disconnect();
     process.exit(1);
   }
