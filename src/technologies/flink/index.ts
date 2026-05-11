@@ -50,7 +50,7 @@ export async function runFlinkMenu(): Promise<void> {
     const exampleChoices = [
       { name: '1. Basics: DataStream API & Job Submission', value: 0 },
       { name: '2. Stateless Operators: Map, Filter, FlatMap', value: 1 },
-      { name: '3. Stateful Processing: ValueState & Counters', value: 2 },
+      { name: '3. Stateful Processing: ValueState, ListState, MapState', value: 2 },
       { name: chalk.gray('4. Windowing (Phase 2 - Coming Soon)'), value: -1 },
       { name: chalk.gray('5. Watermarks & Late Events (Phase 2)'), value: -1 },
       { name: chalk.gray('6. Keyed Streams & Advanced State (Phase 2)'), value: -1 },
