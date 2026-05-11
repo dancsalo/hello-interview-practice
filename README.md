@@ -29,10 +29,10 @@ That's it! The CLI will guide you through running examples for each technology.
 ### Technologies
 
 - ✅ **Redis** (10 examples) - Cache, distributed locks, leaderboards, rate limiting, pub/sub, and more
+- ✅ **Elasticsearch** (10 examples) - Full-text search, geospatial, aggregations, complex queries, and more
 - 🔜 **Kafka** - Coming soon
 - 🔜 **PostgreSQL** - Coming soon
 - 🔜 **Cassandra** - Coming soon
-- 🔜 **Elasticsearch** - Coming soon
 
 Each technology includes multiple examples demonstrating real-world patterns from basic concepts to production considerations.
 
@@ -70,11 +70,15 @@ hello-interview-practice/
 │   ├── cli.ts                  # Main interactive menu
 │   ├── lib/                    # Shared utilities
 │   └── technologies/
-│       └── redis/              # Redis examples
-│           ├── README.md       # Redis overview
+│       ├── redis/              # Redis examples
+│       │   ├── README.md       # Redis overview
+│       │   └── examples/       # 10 runnable examples
+│       └── elasticsearch/      # Elasticsearch examples
+│           ├── README.md       # Elasticsearch overview
 │           └── examples/       # 10 runnable examples
 ├── scripts/
 │   ├── reset-redis.ts          # Reset Redis data
+│   ├── reset-elasticsearch.ts  # Reset Elasticsearch data
 │   └── reset-all.ts            # Reset all services
 ├── key_technologies/           # Reference documentation
 └── docker-compose.yml          # All services
@@ -83,13 +87,14 @@ hello-interview-practice/
 ## Available Commands
 
 ```bash
-npm start              # Launch interactive CLI
-npm run dev            # Development mode with watch
-npm run reset          # Reset all service data
-npm run reset:redis    # Reset only Redis data
-npm run docker:up      # Start Docker services
-npm run docker:down    # Stop Docker services
-npm run docker:reset   # Recreate services from scratch
+npm start                    # Launch interactive CLI
+npm run dev                  # Development mode with watch
+npm run reset                # Reset all service data
+npm run reset:redis          # Reset only Redis data
+npm run reset:elasticsearch  # Reset only Elasticsearch data
+npm run docker:up            # Start Docker services
+npm run docker:down          # Stop Docker services
+npm run docker:reset         # Recreate services from scratch
 ```
 
 ## Redis Examples
@@ -117,12 +122,43 @@ Each example includes:
 
 See `src/technologies/redis/README.md` for more details.
 
+## Elasticsearch Examples
+
+The Elasticsearch technology includes 10 comprehensive examples:
+
+1. **Basics** - Core concepts (indexing, searching, mappings, analyzers)
+2. **Full-Text Search** - Text analysis, matching, and relevance scoring
+3. **Geospatial Search** - Location-based queries and geo_point data
+4. **Aggregations** - Analytics, bucketing, and metrics
+5. **Complex Queries** - Bool queries, nested documents, filtering
+6. **Sorting & Pagination** - Result navigation and performance
+7. **Document Versioning** - Concurrent updates and optimistic locking
+8. **Faceted Search** - Multi-dimensional filtering and navigation
+9. **Index Management** - Mappings, reindexing, and index lifecycle
+10. **Production Patterns** - CDC, sync strategies, and performance optimization
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key Elasticsearch commands
+- Production considerations
+- Further reading
+
+See `src/technologies/elasticsearch/README.md` for more details.
+
 ## Services
 
 ### Redis Stack
 - **Port**: 6379
 - **UI**: RedisInsight at http://localhost:8001
 - **Image**: redis/redis-stack (includes all modules)
+
+### Elasticsearch
+- **Port**: 9200
+- **UI**: Kibana at http://localhost:5601
+- **Image**: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+- **Memory**: 1GB limit for development
 
 ### PostgreSQL
 - **Port**: 5433
@@ -148,6 +184,8 @@ docker ps
 Services use these ports by default:
 - 6379 (Redis)
 - 8001 (RedisInsight)
+- 9200 (Elasticsearch)
+- 5601 (Kibana)
 - 5433 (PostgreSQL)
 
 To customize, create a `.env` file:
@@ -155,6 +193,8 @@ To customize, create a `.env` file:
 ```bash
 REDIS_PORT=6380
 REDIS_INSIGHT_PORT=8002
+ELASTICSEARCH_PORT=9201
+KIBANA_PORT=5602
 POSTGRES_PORT=5433
 ```
 
@@ -166,6 +206,7 @@ docker-compose ps
 
 # View logs for a specific service
 docker-compose logs redis
+docker-compose logs elasticsearch
 
 # Restart services
 docker-compose restart
@@ -193,6 +234,7 @@ npm run reset
 
 # Or reset specific technology
 npm run reset:redis
+npm run reset:elasticsearch
 ```
 
 ## Learning Path
@@ -201,14 +243,16 @@ npm run reset:redis
 1. Start with Redis Basics to understand core data structures
 2. Move to Cache to see practical application
 3. Try Distributed Lock to understand coordination
-4. Explore other patterns based on interest
+4. Explore Elasticsearch Basics for search fundamentals
+5. Explore other patterns based on interest
 
 **For interview prep:**
-1. Run all Redis examples to understand the patterns
-2. Read the production considerations in each README
-3. Try modifying examples to test edge cases
-4. Practice explaining tradeoffs out loud
-5. Review the original docs in `key_technologies/redis/original.md`
+1. Run all Redis examples to understand distributed patterns
+2. Run all Elasticsearch examples to understand search patterns
+3. Read the production considerations in each README
+4. Try modifying examples to test edge cases
+5. Practice explaining tradeoffs out loud
+6. Review the technology READMEs for interview context
 
 **For building systems:**
 1. Understand when NOT to use each pattern
@@ -219,11 +263,11 @@ npm run reset:redis
 
 ## Why This Exists
 
-System design interviews require depth, not breadth. Instead of knowing a little about many technologies, you're better off deeply understanding a few versatile ones. Redis is incredibly versatile - it can be a cache, a lock manager, a pub/sub broker, a search index, and more.
+System design interviews require depth, not breadth. Instead of knowing a little about many technologies, you're better off deeply understanding a few versatile ones. Redis and Elasticsearch are incredibly versatile and appear in countless system design scenarios - caching, distributed coordination, full-text search, analytics, and more.
 
 This project lets you:
 - Actually run the patterns instead of just reading about them
-- See the data structures with RedisInsight
+- See the data with RedisInsight and Kibana
 - Experiment with edge cases
 - Build muscle memory for interviews
 
