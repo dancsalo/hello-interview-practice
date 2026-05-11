@@ -6,7 +6,8 @@
   "scripts": {
     "start": "tsx src/cli.ts",
     "dev": "tsx watch src/cli.ts",
-    "test": "tsx scripts/test-redis-examples.ts",
+    "test": "tsx scripts/test-all-examples.ts",
+    "test:all": "tsx scripts/test-all-examples.ts",
     "test:redis": "tsx scripts/test-redis-examples.ts",
     "test:kafka": "tsx scripts/test-kafka-examples.ts",
     "test:watch": "NON_INTERACTIVE=true tsx watch scripts/test-redis-examples.ts",
