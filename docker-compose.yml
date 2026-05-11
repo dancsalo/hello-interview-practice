@@ -118,6 +118,48 @@ services:
         limits:
           memory: 256M
 
+  cassandra:
+    image: cassandra:4.1
+    container_name: system-design-cassandra
+    ports:
+      - "${CASSANDRA_PORT:-9042}:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: "SystemDesignCluster"
+      CASSANDRA_DC: "datacenter1"
+      CASSANDRA_ENDPOINT_SNITCH: "GossipingPropertyFileSnitch"
+      MAX_HEAP_SIZE: "512M"
+      HEAP_NEWSIZE: "128M"
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  cassandra-web:
+    image: ipushc/cassandra-web:latest
+    container_name: system-design-cassandra-web
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    ports:
+      - "${CASSANDRA_WEB_PORT:-8003}:3000"
+    environment:
+      CASSANDRA_HOST: cassandra
+      CASSANDRA_PORT: 9042
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
 volumes:
   redis-data:
   postgres-data:
+  cassandra-data:
