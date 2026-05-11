@@ -30,7 +30,8 @@ That's it! The CLI will guide you through running examples for each technology.
 
 - ✅ **Redis** (10 examples) - Cache, distributed locks, leaderboards, rate limiting, pub/sub, and more
 - ✅ **PostgreSQL** (7 examples) - SQL operations, transactions, indexing, read/write scaling, optimization
-- 🔜 **Kafka** - Coming soon
+- ✅ **Kafka** (2 examples) - Message streaming, partitioning, producer/consumer patterns
+- ✅ **Flink** (3 examples in Phase 1, 10 total planned) - Stateful stream processing with event-time semantics
 - 🔜 **Cassandra** - Coming soon
 - 🔜 **Elasticsearch** - Coming soon
 
@@ -73,13 +74,21 @@ hello-interview-practice/
 │       ├── redis/              # Redis examples
 │       │   ├── README.md       # Redis overview
 │       │   └── examples/       # 10 runnable examples
-│       └── postgresql/         # PostgreSQL examples
-│           └── examples/       # 7 runnable examples
+│       ├── postgresql/         # PostgreSQL examples
+│       │   └── examples/       # 7 runnable examples
+│       ├── kafka/              # Kafka examples
+│       │   └── examples/       # 2 runnable examples (8 more planned)
+│       └── flink/              # Flink examples
+│           └── examples/       # 3 examples in Phase 1 (10 total planned)
 ├── scripts/
 │   ├── test-redis-examples.ts     # Test Redis examples
 │   ├── test-postgres-examples.ts  # Test PostgreSQL examples
+│   ├── test-kafka-examples.ts     # Test Kafka examples
+│   ├── test-flink-examples.ts     # Test Flink examples
 │   ├── reset-redis.ts             # Reset Redis data
 │   ├── reset-postgres.ts          # Reset PostgreSQL data
+│   ├── reset-kafka.ts             # Reset Kafka data
+│   ├── reset-flink.ts             # Reset Flink data
 │   └── reset-all.ts               # Reset all services
 ├── docs/superpowers/           # Technology documentation
 └── docker-compose.yml          # All services
@@ -93,9 +102,13 @@ npm run dev              # Development mode with watch
 npm test                 # Run Redis integration tests
 npm run test:redis       # Run Redis integration tests
 npm run test:postgres    # Run PostgreSQL integration tests
+npm run test:kafka       # Run Kafka integration tests
+npm run test:flink       # Run Flink integration tests
 npm run reset            # Reset all service data
 npm run reset:redis      # Reset only Redis data
 npm run reset:postgres   # Reset only PostgreSQL data
+npm run reset:kafka      # Reset only Kafka data
+npm run reset:flink      # Reset only Flink data
 npm run docker:up        # Start Docker services
 npm run docker:down      # Stop Docker services
 npm run docker:reset     # Recreate services from scratch
@@ -148,6 +161,41 @@ Each example includes:
 
 See `docs/superpowers/POSTGRESQL.md` for more details.
 
+## Kafka Examples
+
+The Kafka technology includes 2 comprehensive examples (8 more planned):
+
+1. **Basics** - Producers, consumers, topics, and core messaging patterns
+2. **Partitioning** - Partition strategies, ordering guarantees, and scalability
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key Kafka concepts and APIs
+- Production considerations
+- Further reading
+
+See `src/technologies/kafka/README.md` for more details.
+
+## Flink Examples
+
+The Flink technology includes 3 examples in Phase 1 (10 total planned):
+
+1. **Basics** - DataStream API, sources, sinks, and transformations (planned)
+2. **Stateless Operators** - Map, filter, flatMap, and keyBy operations (planned)
+3. **Stateful Processing** - State management, windows, and aggregations (planned)
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key Flink concepts (DataStream API, windowing, watermarks, checkpointing)
+- Production considerations
+- Further reading
+
+See `src/technologies/flink/README.md` for more details.
+
 ## Services
 
 ### Redis Stack
@@ -161,7 +209,16 @@ See `docs/superpowers/POSTGRESQL.md` for more details.
 - **Database**: ecommerce
 - **Image**: postgres:16-alpine
 
-Additional services will be added as more technologies are implemented.
+### Kafka
+- **Port**: 9092 (broker), 9093 (external)
+- **Image**: confluentinc/cp-kafka:7.5.0
+- **Services**: kafka, zookeeper
+
+### Flink
+- **Port**: 8081 (JobManager Web UI)
+- **Image**: flink:1.18-scala_2.12
+- **Services**: flink-jobmanager, flink-taskmanager
+- **UI**: JobManager Dashboard at http://localhost:8081
 
 ## Troubleshooting
 
@@ -180,6 +237,9 @@ Services use these ports by default:
 - 6379 (Redis)
 - 8001 (RedisInsight)
 - 5433 (PostgreSQL)
+- 9092, 9093 (Kafka)
+- 2181 (Zookeeper)
+- 8081 (Flink JobManager)
 
 To customize, create a `.env` file:
 
@@ -187,6 +247,10 @@ To customize, create a `.env` file:
 REDIS_PORT=6380
 REDIS_INSIGHT_PORT=8002
 POSTGRES_PORT=5433
+KAFKA_PORT=9092
+KAFKA_EXTERNAL_PORT=9093
+ZOOKEEPER_PORT=2181
+FLINK_JM_PORT=8081
 ```
 
 ### Services not healthy
@@ -225,6 +289,8 @@ npm run reset
 # Or reset specific technology
 npm run reset:redis
 npm run reset:postgres
+npm run reset:kafka
+npm run reset:flink
 ```
 
 ## Learning Path
@@ -234,14 +300,17 @@ npm run reset:postgres
 2. Try Redis Basics to see key-value data structures
 3. Explore Cache patterns to see practical application
 4. Learn about Transactions and Distributed Locks for coordination
-5. Explore other patterns based on interest
+5. Try Kafka Basics to understand message streaming
+6. Explore other patterns based on interest
 
 **For interview prep:**
 1. Run all Redis and PostgreSQL examples to understand the patterns
-2. Read the production considerations in each example
-3. Try modifying examples to test edge cases
-4. Practice explaining tradeoffs out loud
-5. Review the technology docs in `docs/superpowers/`
+2. Explore Kafka examples to learn message streaming patterns
+3. Try Flink examples to understand stream processing (Phase 1 available)
+4. Read the production considerations in each example
+5. Try modifying examples to test edge cases
+6. Practice explaining tradeoffs out loud
+7. Review the technology docs in `docs/superpowers/`
 
 **For building systems:**
 1. Understand when NOT to use each pattern
@@ -249,24 +318,38 @@ npm run reset:postgres
 3. Consider the alternatives mentioned
 4. Think about how patterns compose
 5. Check RedisInsight to visualize data structures
+6. Use Flink JobManager UI (http://localhost:8081) to monitor stream processing jobs
+
+**Stream processing path:**
+1. Start with Kafka Basics to understand message streaming
+2. Learn Kafka Partitioning for scalability and ordering
+3. Move to Flink Basics to process streams with transformations
+4. Explore Flink Stateless Operators for data manipulation
+5. Study Flink Stateful Processing for windowing and aggregations
 
 ## Why This Exists
 
-System design interviews require depth, not breadth. Instead of knowing a little about many technologies, you're better off deeply understanding a few versatile ones. Redis is incredibly versatile - it can be a cache, a lock manager, a pub/sub broker, a search index, and more.
+System design interviews require depth, not breadth. Instead of knowing a little about many technologies, you're better off deeply understanding a few versatile ones. This project covers four core technologies that appear in most distributed systems:
+
+- **Redis** - Cache, locks, pub/sub, and more versatile patterns
+- **PostgreSQL** - Relational data, transactions, and SQL optimization
+- **Kafka** - Message streaming and event-driven architectures
+- **Flink** - Stateful stream processing and real-time analytics
 
 This project lets you:
 - Actually run the patterns instead of just reading about them
-- See the data structures with RedisInsight
+- See the data structures with RedisInsight and Flink JobManager UI
 - Experiment with edge cases
 - Build muscle memory for interviews
+- Understand how technologies compose together
 
 Running code beats reading slides.
 
 ## Contributing
 
 This is an educational project. Contributions welcome for:
-- New examples for existing technologies
-- New technologies (Kafka, PostgreSQL, etc.)
+- New examples for existing technologies (Redis, PostgreSQL, Kafka, Flink)
+- New technologies (Cassandra, Elasticsearch, etc.)
 - Improved explanations
 - Bug fixes
 
