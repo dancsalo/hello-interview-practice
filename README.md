@@ -30,7 +30,8 @@ That's it! The CLI will guide you through running examples for each technology.
 
 - ✅ **Redis** (10 examples) - Cache, distributed locks, leaderboards, rate limiting, pub/sub, and more
 - ✅ **PostgreSQL** (7 examples) - SQL operations, transactions, indexing, read/write scaling, optimization
-- 🔜 **Kafka** - Coming soon
+- ✅ **DynamoDB** (8 examples) - NoSQL key-value, indexing, consistency, transactions, single-table design
+- ✅ **Kafka** (2 examples) - Event streaming, partitioning, message ordering
 - 🔜 **Cassandra** - Coming soon
 - 🔜 **Elasticsearch** - Coming soon
 
@@ -93,9 +94,11 @@ npm run dev              # Development mode with watch
 npm test                 # Run Redis integration tests
 npm run test:redis       # Run Redis integration tests
 npm run test:postgres    # Run PostgreSQL integration tests
+npm run test:dynamodb    # Run DynamoDB integration tests
 npm run reset            # Reset all service data
 npm run reset:redis      # Reset only Redis data
 npm run reset:postgres   # Reset only PostgreSQL data
+npm run reset:dynamodb   # Reset only DynamoDB data
 npm run docker:up        # Start Docker services
 npm run docker:down      # Stop Docker services
 npm run docker:reset     # Recreate services from scratch
@@ -148,6 +151,23 @@ Each example includes:
 
 See `docs/superpowers/POSTGRESQL.md` for more details.
 
+## DynamoDB Examples
+
+The DynamoDB technology includes comprehensive examples:
+
+1. **Basics** - CRUD operations, Query vs Scan, partition/sort keys
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key DynamoDB concepts
+- Production considerations
+- DynamoDB vs alternatives (Cassandra, MongoDB, PostgreSQL, Redis)
+- Further reading
+
+See `src/technologies/dynamodb/README.md` for more details.
+
 ## Services
 
 ### Redis Stack
@@ -160,6 +180,11 @@ See `docs/superpowers/POSTGRESQL.md` for more details.
 - **User**: demo / demo
 - **Database**: ecommerce
 - **Image**: postgres:16-alpine
+
+### DynamoDB Local
+- **Port**: 8000
+- **UI**: dynamodb-admin at http://localhost:8004
+- **Image**: amazon/dynamodb-local (official AWS image)
 
 Additional services will be added as more technologies are implemented.
 

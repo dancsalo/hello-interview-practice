@@ -65,6 +65,15 @@ export class DockerUtils {
         healthy: false,
         url: 'http://localhost:8080',
       },
+      {
+        name: 'DynamoDB Local',
+        healthy: false,
+      },
+      {
+        name: 'DynamoDB Admin',
+        healthy: false,
+        url: 'http://localhost:8004',
+      },
     ];
 
     // Map display names to actual docker-compose service names
@@ -75,6 +84,8 @@ export class DockerUtils {
       'Kafka': 'kafka',
       'Zookeeper': 'zookeeper',
       'Kafka UI': 'kafka-ui',
+      'DynamoDB Local': 'dynamodb-local',
+      'DynamoDB Admin': 'dynamodb-admin',
     };
 
     for (const service of services) {

@@ -4,10 +4,11 @@ import ora from 'ora';
 import { RedisClient } from './technologies/redis/client.js';
 import { PostgreSQLClient } from './technologies/postgresql/client.js';
 import { KafkaClient } from './technologies/kafka/client.js';
+import { DynamoDBClientWrapper } from './technologies/dynamodb/client.js';
 import { Logger } from './lib/logger.js';
 import { StepByStepLogger } from './lib/step-by-step-logger.js';
 import { DockerUtils } from './lib/docker-utils.js';
-import type { Example, RedisExample, PostgreSQLExample } from './lib/types.js';
+import type { Example, RedisExample, PostgreSQLExample, DynamoDBExample } from './lib/types.js';
 
 // Type guard to check if an example is a RedisExample
 function isRedisExample(example: Example): example is RedisExample {
@@ -39,6 +40,16 @@ import { optimizationExample } from './technologies/postgresql/examples/07-optim
 import { basicsExample as kafkaBasicsExample } from './technologies/kafka/examples/01-basics/index.js';
 import { partitioningExample } from './technologies/kafka/examples/02-partitioning/index.js';
 
+// Import all DynamoDB examples
+import { basicsExample as dynamoBasicsExample } from './technologies/dynamodb/examples/01-basics/index.js';
+import { indexingExample as dynamoIndexingExample } from './technologies/dynamodb/examples/02-indexing/index.js';
+import { consistencyExample } from './technologies/dynamodb/examples/03-consistency-models/index.js';
+import { transactionsExample as dynamoTransactionsExample } from './technologies/dynamodb/examples/04-transactions/index.js';
+import { singleTableExample } from './technologies/dynamodb/examples/05-single-table-design/index.js';
+import { streamsExample } from './technologies/dynamodb/examples/06-streams/index.js';
+import { performanceExample } from './technologies/dynamodb/examples/07-performance/index.js';
+import { productionExample } from './technologies/dynamodb/examples/08-production-patterns/index.js';
+
 const REDIS_EXAMPLES: RedisExample[] = [
   basicsExample,
   cacheExample,
@@ -67,10 +78,22 @@ const KAFKA_EXAMPLES: Example[] = [
   partitioningExample,
 ];
 
+const DYNAMODB_EXAMPLES: DynamoDBExample[] = [
+  dynamoBasicsExample,
+  dynamoIndexingExample,
+  consistencyExample,
+  dynamoTransactionsExample,
+  singleTableExample,
+  streamsExample,
+  performanceExample,
+  productionExample,
+];
+
 class CLI {
   private redisClient: RedisClient;
   private postgresClient: PostgreSQLClient;
   private kafkaClient: KafkaClient;
+  private dynamoClient: DynamoDBClientWrapper;
   private logger: Logger;
   private shuttingDown = false;
 
@@ -78,6 +101,7 @@ class CLI {
     this.redisClient = new RedisClient();
     this.postgresClient = new PostgreSQLClient();
     this.kafkaClient = new KafkaClient();
+    this.dynamoClient = new DynamoDBClientWrapper();
     this.logger = new Logger();
     this.setupSignalHandlers();
   }
@@ -97,6 +121,8 @@ class CLI {
         this.logger.success('Disconnected from PostgreSQL');
         await this.kafkaClient.disconnect();
         this.logger.success('Disconnected from Kafka');
+        await this.dynamoClient.disconnect();
+        this.logger.success('Disconnected from DynamoDB');
       } catch (error) {
         this.logger.error(`Error during shutdown: ${error}`);
       }
@@ -205,6 +231,26 @@ class CLI {
     }
   }
 
+  private async connectDynamoDB(): Promise<boolean> {
+    const spinner = ora('Connecting to DynamoDB...').start();
+
+    try {
+      await this.dynamoClient.connect();
+      const healthy = await this.dynamoClient.healthCheck();
+
+      if (healthy) {
+        spinner.succeed('Connected to DynamoDB');
+        return true;
+      } else {
+        spinner.fail('DynamoDB health check failed');
+        return false;
+      }
+    } catch (error) {
+      spinner.fail(`Failed to connect to DynamoDB: ${error}`);
+      return false;
+    }
+  }
+
   private async showTechnologyMenu(): Promise<string | null> {
     console.log();
     const technology = await select({
@@ -215,12 +261,16 @@ class CLI {
           value: 'redis',
         },
         {
-          name: '📨 Kafka (2 examples)',
-          value: 'kafka',
-        },
-        {
           name: '🐘 PostgreSQL (7 examples)',
           value: 'postgresql',
+        },
+        {
+          name: '⚡ DynamoDB (8 examples)',
+          value: 'dynamodb',
+        },
+        {
+          name: '📨 Kafka (2 examples)',
+          value: 'kafka',
         },
         {
           name: '🔍 Elasticsearch (Coming soon)',
@@ -306,6 +356,29 @@ class CLI {
     return selected;
   }
 
+  private async showDynamoDBExamplesMenu(): Promise<DynamoDBExample | null> {
+    console.log();
+    const choices = DYNAMODB_EXAMPLES.map((example, idx) => ({
+      name: `${String(idx + 1).padStart(2, '0')}. ${example.name}`,
+      value: example,
+      description: example.description,
+    }));
+
+    choices.push({
+      name: '← Back to technologies',
+      value: null as any,
+      description: 'Return to main menu',
+    });
+
+    const selected = await select({
+      message: 'Select a DynamoDB example:',
+      choices,
+      pageSize: 12,
+    });
+
+    return selected;
+  }
+
   private async runExample(example: Example<any>, technology: string): Promise<void> {
     console.log();
     console.log(chalk.bold.cyan('═'.repeat(70)));
@@ -320,6 +393,9 @@ class CLI {
         await example.run(this.kafkaClient as any, steppingLogger);
       } else if (technology === 'postgresql') {
         await example.run(this.postgresClient.getClient() as any, steppingLogger);
+      } else if (technology === 'dynamodb') {
+        const clients = this.dynamoClient.getClients();
+        await example.run(clients, steppingLogger);
       } else {
         const client = this.redisClient.getClient();
         await example.run(client, steppingLogger);
@@ -341,6 +417,8 @@ class CLI {
         this.logger.warning('You may need to reset Kafka to recover.');
       } else if (technology === 'postgresql') {
         this.logger.warning('You may need to reset the database to recover.');
+      } else if (technology === 'dynamodb') {
+        this.logger.warning('You may need to reset DynamoDB to recover.');
       } else {
         this.logger.warning('You may need to reset Redis to recover.');
       }
@@ -467,6 +545,7 @@ class CLI {
                 await this.redisClient.disconnect();
                 await this.postgresClient.disconnect();
                 await this.kafkaClient.disconnect();
+                await this.dynamoClient.disconnect();
                 process.exit(0);
             }
           }
@@ -510,6 +589,52 @@ class CLI {
                 await this.redisClient.disconnect();
                 await this.postgresClient.disconnect();
                 await this.kafkaClient.disconnect();
+                await this.dynamoClient.disconnect();
+                process.exit(0);
+            }
+          }
+        } else if (technology === 'dynamodb') {
+          // Connect to DynamoDB
+          const dynamoConnected = await this.connectDynamoDB();
+          if (!dynamoConnected) {
+            this.logger.error('DynamoDB is not available. Please check Docker services.');
+            continue;
+          }
+
+          let continueDynamo = true;
+
+          while (continueDynamo) {
+            const example = await this.showDynamoDBExamplesMenu();
+            if (!example) {
+              break;
+            }
+
+            await this.runExample(example, 'dynamodb');
+
+            const action = await this.showPostExampleMenu();
+
+            switch (action) {
+              case 'another':
+                continue;
+
+              case 'reset-redis':
+                await this.handleReset('redis');
+                continue;
+
+              case 'reset-all':
+                await this.handleReset('all');
+                continue;
+
+              case 'back':
+                continueDynamo = false;
+                break;
+
+              case 'exit':
+                this.logger.info('Goodbye!');
+                await this.redisClient.disconnect();
+                await this.postgresClient.disconnect();
+                await this.kafkaClient.disconnect();
+                await this.dynamoClient.disconnect();
                 process.exit(0);
             }
           }
@@ -554,6 +679,7 @@ class CLI {
                 await this.redisClient.disconnect();
                 await this.postgresClient.disconnect();
                 await this.kafkaClient.disconnect();
+                await this.dynamoClient.disconnect();
                 process.exit(0);
             }
           }
@@ -570,6 +696,7 @@ class CLI {
       await this.redisClient.disconnect();
       await this.postgresClient.disconnect();
       await this.kafkaClient.disconnect();
+      await this.dynamoClient.disconnect();
     }
   }
 }
