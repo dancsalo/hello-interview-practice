@@ -12,11 +12,11 @@ export interface Logger {
   section(title: string): void;
 }
 
-export interface Example {
+export interface Example<T = RedisClientType> {
   name: string;
   description: string;
-  run: (client: RedisClientType, logger: Logger) => Promise<void>;
-  cleanup?: (client: RedisClientType) => Promise<void>;
+  run: (client: T, logger: Logger, options?: { nonInteractive?: boolean }) => Promise<void>;
+  cleanup?: (client: T) => Promise<void>;
 }
 
 export interface TechnologyClient {
