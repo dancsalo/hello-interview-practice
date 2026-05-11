@@ -7,6 +7,7 @@ import { sortingPaginationExample } from './examples/06-sorting-pagination/index
 import { documentVersioningExample } from './examples/07-document-versioning/index.js';
 import { facetedSearchExample } from './examples/08-faceted-search/index.js';
 import { indexManagementExample } from './examples/09-index-management/index.js';
+import { productionPatternsExample } from './examples/10-production-patterns/index.js';
 
 export const ELASTICSEARCH_EXAMPLES = [
   basicsExample,
@@ -18,4 +19,5 @@ export const ELASTICSEARCH_EXAMPLES = [
   documentVersioningExample,
   facetedSearchExample,
   indexManagementExample,
+  productionPatternsExample,
 ];
