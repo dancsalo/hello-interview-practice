@@ -1,6 +1,7 @@
 import type { RedisClientType } from 'redis';
 import type { Client } from 'pg';
 import type { Producer, Consumer, Admin } from 'kafkajs';
+import type { ZooKeeperClient } from '../technologies/zookeeper/client.js';
 
 export interface Logger {
   info(message: string): void;
@@ -24,6 +25,7 @@ export interface Example<TClient = RedisClientType> {
 export type RedisExample = Example<RedisClientType>;
 export type PostgreSQLExample = Example<Client>;
 export type KafkaExample = Example<any>;
+export type ZooKeeperExample = Example<ZooKeeperClient>;
 
 export interface TechnologyClient {
   connect(): Promise<void>;
