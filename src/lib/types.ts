@@ -24,6 +24,7 @@ export interface Example<TClient = RedisClientType> {
 export type RedisExample = Example<RedisClientType>;
 export type PostgreSQLExample = Example<Client>;
 export type KafkaExample = Example<any>;
+export type CassandraExample = Example<any>;
 
 export interface TechnologyClient {
   connect(): Promise<void>;
