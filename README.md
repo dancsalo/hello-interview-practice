@@ -30,7 +30,7 @@ That's it! The CLI will guide you through running examples for each technology.
 
 - ✅ **Redis** (10 examples) - Cache, distributed locks, leaderboards, rate limiting, pub/sub, and more
 - ✅ **PostgreSQL** (7 examples) - SQL operations, transactions, indexing, read/write scaling, optimization
-- ✅ **DynamoDB** (1 example) - NoSQL key-value, CRUD operations, Query vs Scan, partition keys
+- ✅ **DynamoDB** (8 examples) - NoSQL key-value, indexing, consistency, transactions, single-table design
 - ✅ **Kafka** (2 examples) - Event streaming, partitioning, message ordering
 - 🔜 **Cassandra** - Coming soon
 - 🔜 **Elasticsearch** - Coming soon
