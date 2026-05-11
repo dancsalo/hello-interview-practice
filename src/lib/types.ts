@@ -1,4 +1,6 @@
 import type { RedisClientType } from 'redis';
+import type { Client } from 'pg';
+import type { Producer, Consumer, Admin } from 'kafkajs';
 
 export interface Logger {
   info(message: string): void;
@@ -12,12 +14,16 @@ export interface Logger {
   section(title: string): void;
 }
 
-export interface Example {
+export interface Example<TClient = RedisClientType> {
   name: string;
   description: string;
-  run: (client: RedisClientType, logger: Logger) => Promise<void>;
-  cleanup?: (client: RedisClientType) => Promise<void>;
+  run: (client: TClient, logger: Logger) => Promise<void>;
+  cleanup?: (client: TClient) => Promise<void>;
 }
+
+export type RedisExample = Example<RedisClientType>;
+export type PostgreSQLExample = Example<Client>;
+export type KafkaExample = Example<any>;
 
 export interface TechnologyClient {
   connect(): Promise<void>;

@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 import { config } from 'dotenv';
-import { RedisClient } from '../src/technologies/redis/client.js';
+import { PostgreSQLClient } from '../src/technologies/postgresql/client.js';
 import { Logger } from '../src/lib/logger.js';
 import { StepByStepLogger } from '../src/lib/step-by-step-logger.js';
 import chalk from 'chalk';
@@ -9,35 +9,24 @@ import { writeFile } from 'fs/promises';
 // Load environment variables from .env file
 config();
 
-// Import all Redis examples
-import { basicsExample } from '../src/technologies/redis/examples/01-basics/index.js';
-import { cacheExample } from '../src/technologies/redis/examples/02-cache/index.js';
-import { distributedLockExample } from '../src/technologies/redis/examples/03-distributed-lock/index.js';
-import { leaderboardsExample } from '../src/technologies/redis/examples/04-leaderboards/index.js';
-import { rateLimitingExample } from '../src/technologies/redis/examples/05-rate-limiting/index.js';
-import { proximitySearchExample } from '../src/technologies/redis/examples/06-proximity-search/index.js';
-import { eventSourcingExample } from '../src/technologies/redis/examples/07-event-sourcing/index.js';
-import { pubSubExample } from '../src/technologies/redis/examples/08-pubsub/index.js';
-import { bloomFiltersExample } from '../src/technologies/redis/examples/09-bloom-filters/index.js';
-import { timeSeriesExample } from '../src/technologies/redis/examples/10-time-series/index.js';
-import type { Example, RedisExample } from '../src/lib/types.js';
+// Import all PostgreSQL examples
+import { basicsExample } from '../src/technologies/postgresql/examples/01-basics/index.js';
+import { transactionsExample } from '../src/technologies/postgresql/examples/02-transactions/index.js';
+import { indexingExample } from '../src/technologies/postgresql/examples/03-indexing/index.js';
+import { advancedIndexingExample } from '../src/technologies/postgresql/examples/04-advanced-indexing/index.js';
+import { readScalingExample } from '../src/technologies/postgresql/examples/05-read-scaling/index.js';
+import { writeScalingExample } from '../src/technologies/postgresql/examples/06-write-scaling/index.js';
+import { optimizationExample } from '../src/technologies/postgresql/examples/07-optimization/index.js';
+import type { PostgreSQLExample } from '../src/lib/types.js';
 
-// Type guard to check if an example is a RedisExample
-function isRedisExample(example: Example): example is RedisExample {
-  return 'cleanup' in example;
-}
-
-const REDIS_EXAMPLES: Example[] = [
+const POSTGRES_EXAMPLES: PostgreSQLExample[] = [
   basicsExample,
-  cacheExample,
-  distributedLockExample,
-  leaderboardsExample,
-  rateLimitingExample,
-  proximitySearchExample,
-  eventSourcingExample,
-  pubSubExample,
-  bloomFiltersExample,
-  timeSeriesExample,
+  transactionsExample,
+  indexingExample,
+  advancedIndexingExample,
+  readScalingExample,
+  writeScalingExample,
+  optimizationExample,
 ];
 
 interface TestResult {
@@ -48,8 +37,8 @@ interface TestResult {
 }
 
 async function testExample(
-  example: Example,
-  redisClient: RedisClient,
+  example: PostgreSQLExample,
+  postgresClient: PostgreSQLClient,
   logger: Logger
 ): Promise<TestResult> {
   const startTime = Date.now();
@@ -59,15 +48,14 @@ async function testExample(
   console.log(chalk.cyan('='.repeat(70)));
 
   try {
-    const client = redisClient.getClient();
+    const client = postgresClient.getClient();
     // Use non-interactive mode for automated testing
     const steppingLogger = new StepByStepLogger(logger, false);
 
     await example.run(client, steppingLogger);
 
-    if (isRedisExample(example) && example.cleanup) {
-      await example.cleanup(client);
-    }
+    // PostgreSQL examples include cleanup in their run method
+    // No separate cleanup call needed
 
     const duration = Date.now() - startTime;
     console.log(chalk.green(`✓ Success (${duration}ms)\n`));
@@ -100,28 +88,28 @@ async function testExample(
 
 async function main() {
   const logger = new Logger();
-  const redisClient = new RedisClient();
+  const postgresClient = new PostgreSQLClient();
 
-  console.log(chalk.bold.cyan('\n🧪 Redis Examples Test Suite\n'));
+  console.log(chalk.bold.cyan('\n🧪 PostgreSQL Examples Test Suite\n'));
 
   try {
-    // Connect to Redis
-    console.log('Connecting to Redis...');
-    await redisClient.connect();
-    const healthy = await redisClient.healthCheck();
+    // Connect to PostgreSQL
+    console.log('Connecting to PostgreSQL...');
+    await postgresClient.connect();
+    const healthy = await postgresClient.healthCheck();
 
     if (!healthy) {
-      console.error(chalk.red('Redis health check failed!'));
+      console.error(chalk.red('PostgreSQL health check failed!'));
       process.exit(1);
     }
 
-    console.log(chalk.green('✓ Connected to Redis\n'));
+    console.log(chalk.green('✓ Connected to PostgreSQL\n'));
 
     // Run all tests
     const results: TestResult[] = [];
 
-    for (const example of REDIS_EXAMPLES) {
-      const result = await testExample(example, redisClient, logger);
+    for (const example of POSTGRES_EXAMPLES) {
+      const result = await testExample(example, postgresClient, logger);
       results.push(result);
 
       // Small delay between tests
@@ -177,17 +165,17 @@ async function main() {
       })),
     };
 
-    const reportPath = './test-results.json';
+    const reportPath = './test-results-postgres.json';
     await writeFile(reportPath, JSON.stringify(report, null, 2), 'utf-8');
     console.log(chalk.gray(`\nDetailed report written to: ${reportPath}\n`));
 
     // Exit with error code if any tests failed
-    await redisClient.disconnect();
+    await postgresClient.disconnect();
     process.exit(failed > 0 ? 1 : 0);
 
   } catch (error) {
     console.error(chalk.red('Fatal error:'), error);
-    await redisClient.disconnect();
+    await postgresClient.disconnect();
     process.exit(1);
   }
 }
