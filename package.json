@@ -11,11 +11,13 @@
     "test:redis": "tsx scripts/test-redis-examples.ts",
     "test:postgres": "tsx scripts/test-postgres-examples.ts",
     "test:kafka": "tsx scripts/test-kafka-examples.ts",
+    "test:dynamodb": "tsx scripts/test-dynamodb-examples.ts",
     "test:watch": "NON_INTERACTIVE=true tsx watch scripts/test-redis-examples.ts",
     "reset": "tsx scripts/reset-all.ts",
     "reset:redis": "tsx scripts/reset-redis.ts",
     "reset:postgres": "tsx scripts/reset-postgres.ts",
     "reset:kafka": "tsx scripts/reset-kafka.ts",
+    "reset:dynamodb": "tsx scripts/reset-dynamodb.ts",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:reset": "docker-compose down -v && docker-compose up -d",
@@ -23,6 +25,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1045.0",
+    "@aws-sdk/lib-dynamodb": "^3.1045.0",
     "@inquirer/prompts": "^5.3.8",
     "chalk": "^5.3.0",
     "dotenv": "^17.4.2",
