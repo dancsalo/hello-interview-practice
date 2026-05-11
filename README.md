@@ -29,14 +29,9 @@ That's it! The CLI will guide you through running examples for each technology.
 ### Technologies
 
 - ✅ **Redis** (10 examples) - Cache, distributed locks, leaderboards, rate limiting, pub/sub, and more
-<<<<<<< HEAD
 - ✅ **Kafka** (2 examples, 8 more coming) - Event streaming, partitioning, consumer groups, and more
 - ✅ **PostgreSQL** (7 examples) - Transactions, indexing, full-text search, replication, optimization
-=======
-- ✅ **PostgreSQL** (7 examples) - SQL operations, transactions, indexing, read/write scaling, optimization
-- 🔜 **Kafka** - Coming soon
->>>>>>> e468f4c1942ab98aaccd9ed02bcfaa8a4253aee1
-- 🔜 **Cassandra** - Coming soon
+- ✅ **Cassandra** (10 examples) - Wide-column NoSQL, partitioning, replication, data modeling, real-world patterns
 - 🔜 **Elasticsearch** - Coming soon
 
 Each technology includes multiple examples demonstrating real-world patterns from basic concepts to production considerations.
@@ -93,33 +88,21 @@ hello-interview-practice/
 ## Available Commands
 
 ```bash
-<<<<<<< HEAD
-npm start              # Launch interactive CLI
-npm run dev            # Development mode with watch
-npm run test           # Test all examples
-npm run test:redis     # Test Redis examples only
-npm run test:kafka     # Test Kafka examples only
-npm run test:postgres  # Test PostgreSQL examples only
-npm run reset          # Reset all service data
-npm run reset:redis    # Reset only Redis data
-npm run reset:kafka    # Reset only Kafka topics
-npm run reset:postgres # Reset only PostgreSQL data
-npm run docker:up      # Start Docker services
-npm run docker:down    # Stop Docker services
-npm run docker:reset   # Recreate services from scratch
-=======
 npm start                # Launch interactive CLI
 npm run dev              # Development mode with watch
-npm test                 # Run Redis integration tests
-npm run test:redis       # Run Redis integration tests
-npm run test:postgres    # Run PostgreSQL integration tests
+npm run test             # Test all examples (Redis, Kafka, PostgreSQL, Cassandra)
+npm run test:redis       # Test Redis examples only
+npm run test:kafka       # Test Kafka examples only
+npm run test:postgres    # Test PostgreSQL examples only
+npm run test:cassandra   # Test Cassandra examples only
 npm run reset            # Reset all service data
 npm run reset:redis      # Reset only Redis data
+npm run reset:kafka      # Reset only Kafka topics
 npm run reset:postgres   # Reset only PostgreSQL data
+npm run reset:cassandra  # Reset only Cassandra data
 npm run docker:up        # Start Docker services
 npm run docker:down      # Stop Docker services
 npm run docker:reset     # Recreate services from scratch
->>>>>>> e468f4c1942ab98aaccd9ed02bcfaa8a4253aee1
 ```
 
 ## Redis Examples
@@ -147,7 +130,6 @@ Each example includes:
 
 See `src/technologies/redis/README.md` for more details.
 
-<<<<<<< HEAD
 ## Kafka Examples
 
 The Kafka technology currently includes 2 examples with 8 more coming:
@@ -182,13 +164,10 @@ Each example includes:
 
 See `src/technologies/kafka/README.md` for more details.
 
-=======
->>>>>>> e468f4c1942ab98aaccd9ed02bcfaa8a4253aee1
 ## PostgreSQL Examples
 
 The PostgreSQL technology includes 7 comprehensive examples:
 
-<<<<<<< HEAD
 1. **Basics** - Core operations (CRUD, joins, aggregations, subqueries)
 2. **Transactions** - ACID properties, isolation levels, concurrency control
 3. **Indexing** - B-tree, hash, GiST, covering indexes, index strategies
@@ -196,34 +175,48 @@ The PostgreSQL technology includes 7 comprehensive examples:
 5. **Replication** - Logical vs physical, streaming, failover, monitoring
 6. **Performance Optimization** - EXPLAIN, query tuning, connection pooling, partitioning
 7. **Advanced Queries** - CTEs, window functions, JSON operations, materialized views
-=======
-1. **Basics** - Core SQL operations (CRUD, joins, relationships, foreign keys)
-2. **Transactions** - ACID properties, isolation levels, concurrency control
-3. **Indexing** - B-tree indexes, performance impact, query optimization
-4. **Advanced Indexing** - Partial indexes, covering indexes, GIN/GiST
-5. **Read Scaling** - Replication strategies, read replicas, connection pooling
-6. **Write Scaling** - Sharding, partitioning, write optimization
-7. **Optimization** - Query planning, EXPLAIN, vacuum, performance tuning
->>>>>>> e468f4c1942ab98aaccd9ed02bcfaa8a4253aee1
 
 Each example includes:
 - What it demonstrates
 - Why you'd use this pattern
 - How it works
-<<<<<<< HEAD
 - Key PostgreSQL concepts
 - Production considerations
 - Interview tips
 - Further reading
 
 See `src/technologies/postgres/README.md` for more details.
-=======
-- Key SQL commands and PostgreSQL features
+
+## Cassandra Examples
+
+The Cassandra technology includes 10 comprehensive examples:
+
+**Phase 1: Core Interview Topics**
+
+1. **Basics & CQL** - Keyspaces, tables, CRUD operations, data types, collections
+2. **Primary Key Design** - Partition keys, clustering keys, compound keys, query patterns
+3. **Partitioning Strategy** - Consistent hashing, token ranges, hot partition avoidance
+4. **Replication & Consistency** - Replication factors, consistency levels, CAP theorem tradeoffs
+5. **Write-Optimized Architecture** - LSM trees, commit log, memtables, SSTables, compaction
+6. **Query-Driven Data Modeling** - Denormalization strategies, multiple tables per entity
+
+**Phase 2: Real-World Interview Scenarios**
+
+7. **Discord Messages** - Chat/messaging systems with partition bucketing
+8. **Ticketmaster Tickets** - Event ticketing with section-based partitioning
+9. **Time-Series IoT** - Sensor/metrics data with time-windowed queries and TTL
+10. **E-Commerce Catalog** - Multi-access patterns with SAIs vs denormalization
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key CQL commands
 - Production considerations
+- Interview tips
 - Further reading
 
-See `docs/superpowers/POSTGRESQL.md` for more details.
->>>>>>> e468f4c1942ab98aaccd9ed02bcfaa8a4253aee1
+See `src/technologies/cassandra/README.md` for more details.
 
 ## Services
 
@@ -244,6 +237,12 @@ See `docs/superpowers/POSTGRESQL.md` for more details.
 - **User**: demo / demo
 - **Database**: ecommerce
 - **Image**: postgres:16-alpine
+
+### Cassandra
+- **Port**: 9042 (CQL native protocol)
+- **UI**: Cassandra Web at http://localhost:8003
+- **Image**: cassandra:4.1
+- **Use**: Wide-column NoSQL, high availability, write-heavy workloads, flexible schemas
 
 Additional services will be added as more technologies are implemented.
 
