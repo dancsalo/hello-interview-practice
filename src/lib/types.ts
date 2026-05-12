@@ -1,6 +1,8 @@
 import type { RedisClientType } from 'redis';
 import type { Client } from 'pg';
 import type { Producer, Consumer, Admin } from 'kafkajs';
+import type { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import type { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
 export interface Logger {
   info(message: string): void;
@@ -25,6 +27,13 @@ export type RedisExample = Example<RedisClientType>;
 export type PostgreSQLExample = Example<Client>;
 export type KafkaExample = Example<any>;
 export type CassandraExample = Example<import('cassandra-driver').Client>;
+
+export interface DynamoDBClients {
+  client: DynamoDBClient;
+  docClient: DynamoDBDocumentClient;
+}
+
+export type DynamoDBExample = Example<DynamoDBClients>;
 
 export interface TechnologyClient {
   connect(): Promise<void>;

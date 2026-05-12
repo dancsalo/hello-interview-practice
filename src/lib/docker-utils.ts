@@ -66,6 +66,15 @@ export class DockerUtils {
         url: 'http://localhost:8080',
       },
       {
+        name: 'DynamoDB Local',
+        healthy: false,
+      },
+      {
+        name: 'DynamoDB Admin',
+        healthy: false,
+        url: 'http://localhost:8004',
+      },
+      {
         name: 'Cassandra',
         healthy: false,
       },
@@ -79,6 +88,8 @@ export class DockerUtils {
       'Kafka': 'kafka',
       'Zookeeper': 'zookeeper',
       'Kafka UI': 'kafka-ui',
+      'DynamoDB Local': 'dynamodb-local',
+      'DynamoDB Admin': 'dynamodb-admin',
       'Cassandra': 'cassandra',
     };
 

@@ -5,10 +5,11 @@ import { RedisClient } from './technologies/redis/client.js';
 import { PostgreSQLClient } from './technologies/postgresql/client.js';
 import { KafkaClient } from './technologies/kafka/client.js';
 import { CassandraClient } from './technologies/cassandra/client.js';
+import { DynamoDBClientWrapper } from './technologies/dynamodb/client.js';
 import { Logger } from './lib/logger.js';
 import { StepByStepLogger } from './lib/step-by-step-logger.js';
 import { DockerUtils } from './lib/docker-utils.js';
-import type { Example, RedisExample, PostgreSQLExample, CassandraExample } from './lib/types.js';
+import type { Example, RedisExample, PostgreSQLExample, CassandraExample, DynamoDBExample } from './lib/types.js';
 
 // Type guard to check if an example is a RedisExample
 function isRedisExample(example: Example): example is RedisExample {
@@ -40,17 +41,20 @@ import { optimizationExample } from './technologies/postgresql/examples/07-optim
 import { basicsExample as kafkaBasicsExample } from './technologies/kafka/examples/01-basics/index.js';
 import { partitioningExample } from './technologies/kafka/examples/02-partitioning/index.js';
 
+// Import all DynamoDB examples
+import { basicsExample as dynamoBasicsExample } from './technologies/dynamodb/examples/01-basics/index.js';
+import { indexingExample as dynamoIndexingExample } from './technologies/dynamodb/examples/02-indexing/index.js';
+import { consistencyExample } from './technologies/dynamodb/examples/03-consistency-models/index.js';
+import { transactionsExample as dynamoTransactionsExample } from './technologies/dynamodb/examples/04-transactions/index.js';
+import { singleTableExample } from './technologies/dynamodb/examples/05-single-table-design/index.js';
+import { streamsExample } from './technologies/dynamodb/examples/06-streams/index.js';
+import { performanceExample } from './technologies/dynamodb/examples/07-performance/index.js';
+import { productionExample } from './technologies/dynamodb/examples/08-production-patterns/index.js';
+
 // Import all Cassandra examples
 import { basicsExample as cassandraBasicsExample } from './technologies/cassandra/examples/01-basics/index.js';
 import { primaryKeyDesignExample } from './technologies/cassandra/examples/02-primary-key-design/index.js';
 import { partitioningStrategyExample } from './technologies/cassandra/examples/03-partitioning-strategy/index.js';
-// import { replicationConsistencyExample } from './technologies/cassandra/examples/04-replication-consistency/index.js'; // Being created
-// import { writeOptimizedExample } from './technologies/cassandra/examples/05-write-optimized/index.js'; // Being created
-// import { queryDrivenExample } from './technologies/cassandra/examples/06-query-driven/index.js'; // Being created
-// import { discordMessagesExample } from './technologies/cassandra/examples/07-discord-messages/index.js'; // Being created
-// import { ticketmasterExample } from './technologies/cassandra/examples/08-ticketmaster/index.js'; // Being created
-// import { timeSeriesExample as cassandraTimeSeriesExample } from './technologies/cassandra/examples/09-time-series/index.js'; // Being created
-// import { ecommerceCatalogExample } from './technologies/cassandra/examples/10-ecommerce-catalog/index.js'; // Being created
 
 const REDIS_EXAMPLES: RedisExample[] = [
   basicsExample,
@@ -80,17 +84,21 @@ const KAFKA_EXAMPLES: Example[] = [
   partitioningExample,
 ];
 
+const DYNAMODB_EXAMPLES: DynamoDBExample[] = [
+  dynamoBasicsExample,
+  dynamoIndexingExample,
+  consistencyExample,
+  dynamoTransactionsExample,
+  singleTableExample,
+  streamsExample,
+  performanceExample,
+  productionExample,
+];
+
 const CASSANDRA_EXAMPLES: CassandraExample[] = [
   cassandraBasicsExample,
   primaryKeyDesignExample,
   partitioningStrategyExample,
-  // replicationConsistencyExample, // Being created in parallel
-  // writeOptimizedExample, // Being created in parallel
-  // queryDrivenExample, // Being created in parallel
-  // discordMessagesExample, // Being created in parallel
-  // ticketmasterExample, // Being created in parallel
-  // cassandraTimeSeriesExample, // Being created in parallel
-  // ecommerceCatalogExample, // Being created in parallel
 ];
 
 class CLI {
@@ -98,6 +106,7 @@ class CLI {
   private postgresClient: PostgreSQLClient;
   private kafkaClient: KafkaClient;
   private cassandraClient: CassandraClient;
+  private dynamoClient: DynamoDBClientWrapper;
   private logger: Logger;
   private shuttingDown = false;
 
@@ -106,6 +115,7 @@ class CLI {
     this.postgresClient = new PostgreSQLClient();
     this.kafkaClient = new KafkaClient();
     this.cassandraClient = new CassandraClient();
+    this.dynamoClient = new DynamoDBClientWrapper();
     this.logger = new Logger();
     this.setupSignalHandlers();
   }
@@ -127,6 +137,8 @@ class CLI {
         this.logger.success('Disconnected from Kafka');
         await this.cassandraClient.disconnect();
         this.logger.success('Disconnected from Cassandra');
+        await this.dynamoClient.disconnect();
+        this.logger.success('Disconnected from DynamoDB');
       } catch (error) {
         this.logger.error(`Error during shutdown: ${error}`);
       }
@@ -235,6 +247,26 @@ class CLI {
     }
   }
 
+  private async connectDynamoDB(): Promise<boolean> {
+    const spinner = ora('Connecting to DynamoDB...').start();
+
+    try {
+      await this.dynamoClient.connect();
+      const healthy = await this.dynamoClient.healthCheck();
+
+      if (healthy) {
+        spinner.succeed('Connected to DynamoDB');
+        return true;
+      } else {
+        spinner.fail('DynamoDB health check failed');
+        return false;
+      }
+    } catch (error) {
+      spinner.fail(`Failed to connect to DynamoDB: ${error}`);
+      return false;
+    }
+  }
+
   private async connectCassandra(): Promise<boolean> {
     const spinner = ora('Connecting to Cassandra...').start();
 
@@ -265,15 +297,19 @@ class CLI {
           value: 'redis',
         },
         {
-          name: '📨 Kafka (2 examples)',
-          value: 'kafka',
-        },
-        {
           name: '🐘 PostgreSQL (7 examples)',
           value: 'postgresql',
         },
         {
-          name: '💎 Cassandra (3 examples, 7 more coming)',
+          name: '⚡ DynamoDB (8 examples)',
+          value: 'dynamodb',
+        },
+        {
+          name: '📨 Kafka (2 examples)',
+          value: 'kafka',
+        },
+        {
+          name: '💎 Cassandra (3 examples)',
           value: 'cassandra',
         },
         {
@@ -360,6 +396,29 @@ class CLI {
     return selected;
   }
 
+  private async showDynamoDBExamplesMenu(): Promise<DynamoDBExample | null> {
+    console.log();
+    const choices = DYNAMODB_EXAMPLES.map((example, idx) => ({
+      name: `${String(idx + 1).padStart(2, '0')}. ${example.name}`,
+      value: example,
+      description: example.description,
+    }));
+
+    choices.push({
+      name: '← Back to technologies',
+      value: null as any,
+      description: 'Return to main menu',
+    });
+
+    const selected = await select({
+      message: 'Select a DynamoDB example:',
+      choices,
+      pageSize: 12,
+    });
+
+    return selected;
+  }
+
   private async showCassandraExamplesMenu(): Promise<CassandraExample | null> {
     console.log();
     const choices = CASSANDRA_EXAMPLES.map((example, idx) => ({
@@ -397,6 +456,9 @@ class CLI {
         await example.run(this.kafkaClient as any, steppingLogger);
       } else if (technology === 'postgresql') {
         await example.run(this.postgresClient.getClient() as any, steppingLogger);
+      } else if (technology === 'dynamodb') {
+        const clients = this.dynamoClient.getClients();
+        await example.run(clients, steppingLogger);
       } else if (technology === 'cassandra') {
         await example.run(this.cassandraClient.getClient() as any, steppingLogger);
       } else {
@@ -425,6 +487,8 @@ class CLI {
         this.logger.warning('You may need to reset Kafka to recover.');
       } else if (technology === 'postgresql') {
         this.logger.warning('You may need to reset the database to recover.');
+      } else if (technology === 'dynamodb') {
+        this.logger.warning('You may need to reset DynamoDB to recover.');
       } else if (technology === 'cassandra') {
         this.logger.warning('You may need to reset Cassandra to recover.');
       } else {
@@ -554,6 +618,7 @@ class CLI {
                 await this.postgresClient.disconnect();
                 await this.kafkaClient.disconnect();
                 await this.cassandraClient.disconnect();
+                await this.dynamoClient.disconnect();
                 process.exit(0);
             }
           }
@@ -598,6 +663,53 @@ class CLI {
                 await this.postgresClient.disconnect();
                 await this.kafkaClient.disconnect();
                 await this.cassandraClient.disconnect();
+                await this.dynamoClient.disconnect();
+                process.exit(0);
+            }
+          }
+        } else if (technology === 'dynamodb') {
+          // Connect to DynamoDB
+          const dynamoConnected = await this.connectDynamoDB();
+          if (!dynamoConnected) {
+            this.logger.error('DynamoDB is not available. Please check Docker services.');
+            continue;
+          }
+
+          let continueDynamo = true;
+
+          while (continueDynamo) {
+            const example = await this.showDynamoDBExamplesMenu();
+            if (!example) {
+              break;
+            }
+
+            await this.runExample(example, 'dynamodb');
+
+            const action = await this.showPostExampleMenu();
+
+            switch (action) {
+              case 'another':
+                continue;
+
+              case 'reset-redis':
+                await this.handleReset('redis');
+                continue;
+
+              case 'reset-all':
+                await this.handleReset('all');
+                continue;
+
+              case 'back':
+                continueDynamo = false;
+                break;
+
+              case 'exit':
+                this.logger.info('Goodbye!');
+                await this.redisClient.disconnect();
+                await this.postgresClient.disconnect();
+                await this.kafkaClient.disconnect();
+                await this.cassandraClient.disconnect();
+                await this.dynamoClient.disconnect();
                 process.exit(0);
             }
           }
@@ -643,6 +755,7 @@ class CLI {
                 await this.postgresClient.disconnect();
                 await this.kafkaClient.disconnect();
                 await this.cassandraClient.disconnect();
+                await this.dynamoClient.disconnect();
                 process.exit(0);
             }
           }
@@ -688,6 +801,7 @@ class CLI {
                 await this.postgresClient.disconnect();
                 await this.kafkaClient.disconnect();
                 await this.cassandraClient.disconnect();
+                await this.dynamoClient.disconnect();
                 process.exit(0);
             }
           }
@@ -705,6 +819,7 @@ class CLI {
       await this.postgresClient.disconnect();
       await this.kafkaClient.disconnect();
       await this.cassandraClient.disconnect();
+      await this.dynamoClient.disconnect();
     }
   }
 }

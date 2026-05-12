@@ -29,8 +29,9 @@ That's it! The CLI will guide you through running examples for each technology.
 ### Technologies
 
 - ✅ **Redis** (10 examples) - Cache, distributed locks, leaderboards, rate limiting, pub/sub, and more
-- ✅ **Kafka** (2 examples, 8 more coming) - Event streaming, partitioning, consumer groups, and more
-- ✅ **PostgreSQL** (7 examples) - Transactions, indexing, full-text search, replication, optimization
+- ✅ **PostgreSQL** (7 examples) - SQL operations, transactions, indexing, read/write scaling, optimization
+- ✅ **DynamoDB** (8 examples) - NoSQL key-value, indexing, consistency, transactions, single-table design
+- ✅ **Kafka** (2 examples) - Event streaming, partitioning, message ordering
 - ✅ **Cassandra** (10 examples) - Wide-column NoSQL, partitioning, replication, data modeling, real-world patterns
 - 🔜 **Elasticsearch** - Coming soon
 
@@ -90,15 +91,17 @@ hello-interview-practice/
 ```bash
 npm start                # Launch interactive CLI
 npm run dev              # Development mode with watch
-npm run test             # Test all examples (Redis, Kafka, PostgreSQL, Cassandra)
+npm test                 # Test all examples (Redis, PostgreSQL, DynamoDB, Kafka, Cassandra)
 npm run test:redis       # Test Redis examples only
-npm run test:kafka       # Test Kafka examples only
 npm run test:postgres    # Test PostgreSQL examples only
+npm run test:dynamodb    # Test DynamoDB examples only
+npm run test:kafka       # Test Kafka examples only
 npm run test:cassandra   # Test Cassandra examples only
 npm run reset            # Reset all service data
 npm run reset:redis      # Reset only Redis data
-npm run reset:kafka      # Reset only Kafka topics
 npm run reset:postgres   # Reset only PostgreSQL data
+npm run reset:dynamodb   # Reset only DynamoDB data
+npm run reset:kafka      # Reset only Kafka topics
 npm run reset:cassandra  # Reset only Cassandra data
 npm run docker:up        # Start Docker services
 npm run docker:down      # Stop Docker services
@@ -218,6 +221,23 @@ Each example includes:
 
 See `src/technologies/cassandra/README.md` for more details.
 
+## DynamoDB Examples
+
+The DynamoDB technology includes comprehensive examples:
+
+1. **Basics** - CRUD operations, Query vs Scan, partition/sort keys
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key DynamoDB concepts
+- Production considerations
+- DynamoDB vs alternatives (Cassandra, MongoDB, PostgreSQL, Redis)
+- Further reading
+
+See `src/technologies/dynamodb/README.md` for more details.
+
 ## Services
 
 ### Redis Stack
@@ -237,6 +257,11 @@ See `src/technologies/cassandra/README.md` for more details.
 - **User**: demo / demo
 - **Database**: ecommerce
 - **Image**: postgres:16-alpine
+
+### DynamoDB Local
+- **Port**: 8000
+- **UI**: dynamodb-admin at http://localhost:8004
+- **Image**: amazon/dynamodb-local (official AWS image)
 
 ### Cassandra
 - **Port**: 9042 (CQL native protocol)

@@ -63,7 +63,6 @@ const KAFKA_EXAMPLES = [
 
 const DYNAMODB_EXAMPLES = [
   dynamoBasics,
-  // Will add more as we create them
 ];
 
 async function testRedisExamples(): Promise<TestResult[]> {
@@ -183,7 +182,7 @@ async function testDynamoDBExamples(): Promise<TestResult[]> {
   const logger = new Logger();
 
   try {
-    console.log('\n📦 Testing DynamoDB Examples');
+    console.log('\n🗄️ Testing DynamoDB Examples');
     console.log('═'.repeat(70));
 
     await dynamoClient.connect();
