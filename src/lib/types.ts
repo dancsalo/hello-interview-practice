@@ -19,7 +19,7 @@ export interface Logger {
 export interface Example<TClient = RedisClientType> {
   name: string;
   description: string;
-  run: (client: TClient, logger: Logger) => Promise<void>;
+  run: (client: TClient, logger: Logger, options?: { nonInteractive?: boolean }) => Promise<void>;
   cleanup?: (client: TClient) => Promise<void>;
 }
 

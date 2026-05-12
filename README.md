@@ -7,13 +7,16 @@ An interactive learning platform for mastering system design technologies throug
 Get up and running in under 60 seconds:
 
 ```bash
-# 1. Start Docker services
+# 1. Create environment file (optional, uses defaults if skipped)
+cp .env.example .env
+
+# 2. Start Docker services
 docker-compose up -d
 
-# 2. Install dependencies
+# 3. Install dependencies
 npm install
 
-# 3. Launch interactive CLI
+# 4. Launch interactive CLI
 npm start
 ```
 
@@ -31,9 +34,9 @@ That's it! The CLI will guide you through running examples for each technology.
 - ✅ **Redis** (10 examples) - Cache, distributed locks, leaderboards, rate limiting, pub/sub, and more
 - ✅ **PostgreSQL** (7 examples) - SQL operations, transactions, indexing, read/write scaling, optimization
 - ✅ **DynamoDB** (8 examples) - NoSQL key-value, indexing, consistency, transactions, single-table design
+- ✅ **Elasticsearch** (10 examples) - Full-text search, geospatial, aggregations, complex queries, and more
 - ✅ **Kafka** (2 examples) - Event streaming, partitioning, message ordering
 - ✅ **Cassandra** (10 examples) - Wide-column NoSQL, partitioning, replication, data modeling, real-world patterns
-- 🔜 **Elasticsearch** - Coming soon
 
 Each technology includes multiple examples demonstrating real-world patterns from basic concepts to production considerations.
 
@@ -71,16 +74,20 @@ hello-interview-practice/
 │   ├── cli.ts                  # Main interactive menu
 │   ├── lib/                    # Shared utilities
 │   └── technologies/
-│       ├── redis/              # Redis examples
-│       │   ├── README.md       # Redis overview
-│       │   └── examples/       # 10 runnable examples
-│       └── postgresql/         # PostgreSQL examples
-│           └── examples/       # 7 runnable examples
+│       ├── redis/              # Redis examples (10)
+│       ├── postgresql/         # PostgreSQL examples (7)
+│       ├── elasticsearch/      # Elasticsearch examples (10)
+│       └── kafka/              # Kafka examples (2)
 ├── scripts/
+│   ├── test-all-examples.ts       # Run all integration tests
 │   ├── test-redis-examples.ts     # Test Redis examples
 │   ├── test-postgres-examples.ts  # Test PostgreSQL examples
+│   ├── test-elasticsearch-examples.ts # Test Elasticsearch examples
+│   ├── test-kafka-examples.ts     # Test Kafka examples
 │   ├── reset-redis.ts             # Reset Redis data
 │   ├── reset-postgres.ts          # Reset PostgreSQL data
+│   ├── reset-elasticsearch.ts     # Reset Elasticsearch data
+│   ├── reset-kafka.ts             # Reset Kafka data
 │   └── reset-all.ts               # Reset all services
 ├── docs/superpowers/           # Technology documentation
 └── docker-compose.yml          # All services
@@ -89,23 +96,25 @@ hello-interview-practice/
 ## Available Commands
 
 ```bash
-npm start                # Launch interactive CLI
-npm run dev              # Development mode with watch
-npm test                 # Test all examples (Redis, PostgreSQL, DynamoDB, Kafka, Cassandra)
-npm run test:redis       # Test Redis examples only
-npm run test:postgres    # Test PostgreSQL examples only
-npm run test:dynamodb    # Test DynamoDB examples only
-npm run test:kafka       # Test Kafka examples only
-npm run test:cassandra   # Test Cassandra examples only
-npm run reset            # Reset all service data
-npm run reset:redis      # Reset only Redis data
-npm run reset:postgres   # Reset only PostgreSQL data
-npm run reset:dynamodb   # Reset only DynamoDB data
-npm run reset:kafka      # Reset only Kafka topics
-npm run reset:cassandra  # Reset only Cassandra data
-npm run docker:up        # Start Docker services
-npm run docker:down      # Stop Docker services
-npm run docker:reset     # Recreate services from scratch
+npm start                    # Launch interactive CLI
+npm run dev                  # Development mode with watch
+npm test                     # Test all examples (Redis, PostgreSQL, DynamoDB, Elasticsearch, Kafka, Cassandra)
+npm run test:redis           # Test Redis examples only
+npm run test:postgres        # Test PostgreSQL examples only
+npm run test:dynamodb        # Test DynamoDB examples only
+npm run test:elasticsearch   # Test Elasticsearch examples only
+npm run test:kafka           # Test Kafka examples only
+npm run test:cassandra       # Test Cassandra examples only
+npm run reset                # Reset all service data
+npm run reset:redis          # Reset only Redis data
+npm run reset:postgres       # Reset only PostgreSQL data
+npm run reset:dynamodb       # Reset only DynamoDB data
+npm run reset:elasticsearch  # Reset only Elasticsearch data
+npm run reset:kafka          # Reset only Kafka topics
+npm run reset:cassandra      # Reset only Cassandra data
+npm run docker:up            # Start Docker services
+npm run docker:down          # Stop Docker services
+npm run docker:reset         # Recreate services from scratch
 ```
 
 ## Redis Examples
@@ -132,6 +141,31 @@ Each example includes:
 - Further reading
 
 See `src/technologies/redis/README.md` for more details.
+
+## Elasticsearch Examples
+
+The Elasticsearch technology includes 10 comprehensive examples:
+
+1. **Basics** - Core concepts (indexing, searching, mappings, analyzers)
+2. **Full-Text Search** - Text analysis, matching, and relevance scoring
+3. **Geospatial Search** - Location-based queries and geo_point data
+4. **Aggregations** - Analytics, bucketing, and metrics
+5. **Complex Queries** - Bool queries, nested documents, filtering
+6. **Sorting & Pagination** - Result navigation and performance
+7. **Document Versioning** - Concurrent updates and optimistic locking
+8. **Faceted Search** - Multi-dimensional filtering and navigation
+9. **Index Management** - Mappings, reindexing, and index lifecycle
+10. **Production Patterns** - CDC, sync strategies, and performance optimization
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key Elasticsearch commands
+- Production considerations
+- Further reading
+
+See `src/technologies/elasticsearch/README.md` for more details.
 
 ## Kafka Examples
 
@@ -245,12 +279,11 @@ See `src/technologies/dynamodb/README.md` for more details.
 - **UI**: RedisInsight at http://localhost:8001
 - **Image**: redis/redis-stack (includes all modules)
 
-### Kafka
-- **Port**: 9092 (Kafka broker)
-- **Port**: 2181 (Zookeeper)
-- **UI**: Kafka UI at http://localhost:8002
-- **Image**: confluentinc/cp-kafka:7.5.0
-- **Use**: Event streaming, message queues, real-time processing
+### Elasticsearch
+- **Port**: 9200
+- **UI**: Kibana at http://localhost:5601
+- **Image**: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+- **Memory**: 1GB limit for development
 
 ### PostgreSQL
 - **Port**: 5433
@@ -263,13 +296,17 @@ See `src/technologies/dynamodb/README.md` for more details.
 - **UI**: dynamodb-admin at http://localhost:8004
 - **Image**: amazon/dynamodb-local (official AWS image)
 
+### Kafka
+- **Port**: 9092 (Broker)
+- **UI**: Kafka UI at http://localhost:8002
+- **Image**: confluentinc/cp-kafka:7.5.0
+- **Requires**: Zookeeper (auto-started)
+
 ### Cassandra
 - **Port**: 9042 (CQL native protocol)
 - **UI**: Cassandra Web at http://localhost:8003
 - **Image**: cassandra:4.1
 - **Use**: Wide-column NoSQL, high availability, write-heavy workloads, flexible schemas
-
-Additional services will be added as more technologies are implemented.
 
 ## Troubleshooting
 
@@ -287,6 +324,8 @@ docker ps
 Services use these ports by default:
 - 6379 (Redis)
 - 8001 (RedisInsight)
+- 9200 (Elasticsearch)
+- 5601 (Kibana)
 - 5433 (PostgreSQL)
 
 To customize, create a `.env` file:
@@ -294,6 +333,8 @@ To customize, create a `.env` file:
 ```bash
 REDIS_PORT=6380
 REDIS_INSIGHT_PORT=8002
+ELASTICSEARCH_PORT=9201
+KIBANA_PORT=5602
 POSTGRES_PORT=5433
 ```
 
@@ -305,6 +346,7 @@ docker-compose ps
 
 # View logs for a specific service
 docker-compose logs redis
+docker-compose logs elasticsearch
 
 # Restart services
 docker-compose restart
@@ -332,24 +374,25 @@ npm run reset
 
 # Or reset specific technology
 npm run reset:redis
-npm run reset:postgres
+npm run reset:elasticsearch
 ```
 
 ## Learning Path
 
 **For beginners:**
-1. Start with PostgreSQL Basics to understand SQL fundamentals
-2. Try Redis Basics to see key-value data structures
-3. Explore Cache patterns to see practical application
-4. Learn about Transactions and Distributed Locks for coordination
+1. Start with Redis Basics to understand core data structures
+2. Move to Cache to see practical application
+3. Try Distributed Lock to understand coordination
+4. Explore Elasticsearch Basics for search fundamentals
 5. Explore other patterns based on interest
 
 **For interview prep:**
-1. Run all Redis and PostgreSQL examples to understand the patterns
-2. Read the production considerations in each example
-3. Try modifying examples to test edge cases
-4. Practice explaining tradeoffs out loud
-5. Review the technology docs in `docs/superpowers/`
+1. Run all Redis examples to understand distributed patterns
+2. Run all Elasticsearch examples to understand search patterns
+3. Read the production considerations in each README
+4. Try modifying examples to test edge cases
+5. Practice explaining tradeoffs out loud
+6. Review the technology READMEs for interview context
 
 **For building systems:**
 1. Understand when NOT to use each pattern
@@ -360,11 +403,11 @@ npm run reset:postgres
 
 ## Why This Exists
 
-System design interviews require depth, not breadth. Instead of knowing a little about many technologies, you're better off deeply understanding a few versatile ones. Redis is incredibly versatile - it can be a cache, a lock manager, a pub/sub broker, a search index, and more.
+System design interviews require depth, not breadth. Instead of knowing a little about many technologies, you're better off deeply understanding a few versatile ones. Redis and Elasticsearch are incredibly versatile and appear in countless system design scenarios - caching, distributed coordination, full-text search, analytics, and more.
 
 This project lets you:
 - Actually run the patterns instead of just reading about them
-- See the data structures with RedisInsight
+- See the data with RedisInsight and Kibana
 - Experiment with edge cases
 - Build muscle memory for interviews
 
