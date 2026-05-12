@@ -24,19 +24,26 @@ That's it! The CLI will guide you through running examples for each technology.
 
 ## Prerequisites
 
-- **Docker Desktop** - All services run in containers
-  - Install from [docker.com](https://www.docker.com/products/docker-desktop/)
-  - **Resource Requirements**:
+- **Rancher Desktop** (recommended) or Docker Desktop - All services run in containers
+  - **Rancher Desktop** (Free, open-source):
+    - Install from [rancherdesktop.io](https://rancherdesktop.io/)
+    - Select **dockerd (moby)** as the container runtime during setup
+    - Open-source and free for commercial use
+  - **Docker Desktop** (Alternative, requires license for commercial use):
+    - Install from [docker.com](https://www.docker.com/products/docker-desktop/)
+    - Note: Free for personal/education use, requires paid license for companies with 250+ employees or $10M+ revenue
+  - **Resource Requirements** (applies to both):
     - **Memory**: Minimum 8GB RAM allocated to Docker
     - **Disk Space**: Minimum 20GB free in Docker virtual disk
     - **CPUs**: 4+ cores recommended
-  - **Configure Docker Desktop**:
-    1. Open Docker Desktop → Settings → Resources
-    2. Set **Memory** to at least 8GB (16GB recommended)
-    3. Set **Disk image size** to at least 100GB
-    4. Set **CPUs** to 4 or more
-    5. Click "Apply & Restart"
-- **Docker Compose** - Included with Docker Desktop
+  - **Configure Resources**:
+    - **Rancher Desktop**: Preferences → Virtual Machine → Memory/CPUs/Disk
+    - **Docker Desktop**: Settings → Resources
+    - Recommended settings:
+      - **Memory**: 8GB minimum (16GB recommended)
+      - **Disk**: 100GB minimum
+      - **CPUs**: 4 or more
+- **Docker Compose** - Included with both Rancher Desktop and Docker Desktop
 - **Node.js >= 18.x** - For running the interactive examples (v20.11.0+ recommended)
   - Note: Node.js v22+ will be required starting January 2027 for AWS SDK compatibility
 
@@ -291,10 +298,10 @@ docker system prune
 docker system prune -a --volumes
 ```
 
-**Increase Docker Desktop disk size:**
-1. Open Docker Desktop → Settings → Resources
-2. Increase "Disk image size" to 150GB+
-3. Click "Apply & Restart"
+**Increase disk size:**
+- **Rancher Desktop**: Preferences → Virtual Machine → Increase disk size to 150GB+
+- **Docker Desktop**: Settings → Resources → Increase "Disk image size" to 150GB+
+- Click "Apply & Restart" after changes
 
 ### Container Issues
 
@@ -351,7 +358,9 @@ cp .env.example .env
 ### Performance Issues
 
 **Memory pressure:**
-- Increase Docker memory allocation (Settings → Resources → Memory)
+- Increase Docker memory allocation:
+  - **Rancher Desktop**: Preferences → Virtual Machine → Memory
+  - **Docker Desktop**: Settings → Resources → Memory
 - Minimum: 8GB, Recommended: 16GB
 
 **Elasticsearch slow:**
