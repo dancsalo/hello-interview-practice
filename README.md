@@ -37,6 +37,7 @@ That's it! The CLI will guide you through running examples for each technology.
 - ✅ **Elasticsearch** (10 examples) - Full-text search, geospatial, aggregations, complex queries, and more
 - ✅ **Kafka** (2 examples) - Event streaming, partitioning, message ordering
 - ✅ **Cassandra** (10 examples) - Wide-column NoSQL, partitioning, replication, data modeling, real-world patterns
+- ✅ **Flink** (3 examples in Phase 1, 10 total planned) - Stateful stream processing with event-time semantics
 
 Each technology includes multiple examples demonstrating real-world patterns from basic concepts to production considerations.
 
@@ -76,18 +77,27 @@ hello-interview-practice/
 │   └── technologies/
 │       ├── redis/              # Redis examples (10)
 │       ├── postgresql/         # PostgreSQL examples (7)
+│       ├── dynamodb/           # DynamoDB examples (8)
 │       ├── elasticsearch/      # Elasticsearch examples (10)
-│       └── kafka/              # Kafka examples (2)
+│       ├── kafka/              # Kafka examples (2)
+│       ├── cassandra/          # Cassandra examples (10)
+│       └── flink/              # Flink examples (3 in Phase 1, 10 total planned)
 ├── scripts/
 │   ├── test-all-examples.ts       # Run all integration tests
 │   ├── test-redis-examples.ts     # Test Redis examples
 │   ├── test-postgres-examples.ts  # Test PostgreSQL examples
+│   ├── test-dynamodb-examples.ts  # Test DynamoDB examples
 │   ├── test-elasticsearch-examples.ts # Test Elasticsearch examples
 │   ├── test-kafka-examples.ts     # Test Kafka examples
+│   ├── test-cassandra-examples.ts # Test Cassandra examples
+│   ├── test-flink-examples.ts     # Test Flink examples
 │   ├── reset-redis.ts             # Reset Redis data
 │   ├── reset-postgres.ts          # Reset PostgreSQL data
+│   ├── reset-dynamodb.ts          # Reset DynamoDB data
 │   ├── reset-elasticsearch.ts     # Reset Elasticsearch data
 │   ├── reset-kafka.ts             # Reset Kafka data
+│   ├── reset-cassandra.ts         # Reset Cassandra data
+│   ├── reset-flink.ts             # Reset Flink data
 │   └── reset-all.ts               # Reset all services
 ├── docs/superpowers/           # Technology documentation
 └── docker-compose.yml          # All services
@@ -98,13 +108,14 @@ hello-interview-practice/
 ```bash
 npm start                    # Launch interactive CLI
 npm run dev                  # Development mode with watch
-npm test                     # Test all examples (Redis, PostgreSQL, DynamoDB, Elasticsearch, Kafka, Cassandra)
+npm test                     # Test all examples (Redis, PostgreSQL, DynamoDB, Elasticsearch, Kafka, Cassandra, Flink)
 npm run test:redis           # Test Redis examples only
 npm run test:postgres        # Test PostgreSQL examples only
 npm run test:dynamodb        # Test DynamoDB examples only
 npm run test:elasticsearch   # Test Elasticsearch examples only
 npm run test:kafka           # Test Kafka examples only
 npm run test:cassandra       # Test Cassandra examples only
+npm run test:flink           # Test Flink examples only
 npm run reset                # Reset all service data
 npm run reset:redis          # Reset only Redis data
 npm run reset:postgres       # Reset only PostgreSQL data
@@ -112,6 +123,7 @@ npm run reset:dynamodb       # Reset only DynamoDB data
 npm run reset:elasticsearch  # Reset only Elasticsearch data
 npm run reset:kafka          # Reset only Kafka topics
 npm run reset:cassandra      # Reset only Cassandra data
+npm run reset:flink          # Reset only Flink data
 npm run docker:up            # Start Docker services
 npm run docker:down          # Stop Docker services
 npm run docker:reset         # Recreate services from scratch
@@ -272,6 +284,41 @@ Each example includes:
 
 See `src/technologies/dynamodb/README.md` for more details.
 
+## Kafka Examples
+
+The Kafka technology includes 2 comprehensive examples (8 more planned):
+
+1. **Basics** - Producers, consumers, topics, and core messaging patterns
+2. **Partitioning** - Partition strategies, ordering guarantees, and scalability
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key Kafka concepts and APIs
+- Production considerations
+- Further reading
+
+See `src/technologies/kafka/README.md` for more details.
+
+## Flink Examples
+
+The Flink technology includes 3 examples in Phase 1 (10 total planned):
+
+1. **Basics** - DataStream API, sources, sinks, and transformations (planned)
+2. **Stateless Operators** - Map, filter, flatMap, and keyBy operations (planned)
+3. **Stateful Processing** - State management, windows, and aggregations (planned)
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key Flink concepts (DataStream API, windowing, watermarks, checkpointing)
+- Production considerations
+- Further reading
+
+See `src/technologies/flink/README.md` for more details.
+
 ## Services
 
 ### Redis Stack
@@ -308,6 +355,12 @@ See `src/technologies/dynamodb/README.md` for more details.
 - **Image**: cassandra:4.1
 - **Use**: Wide-column NoSQL, high availability, write-heavy workloads, flexible schemas
 
+### Flink
+- **Port**: 8081 (JobManager Web UI)
+- **Image**: flink:1.18-scala_2.12
+- **Services**: flink-jobmanager, flink-taskmanager
+- **UI**: JobManager Dashboard at http://localhost:8081
+
 ## Troubleshooting
 
 ### Docker not running
@@ -327,6 +380,9 @@ Services use these ports by default:
 - 9200 (Elasticsearch)
 - 5601 (Kibana)
 - 5433 (PostgreSQL)
+- 9092, 9093 (Kafka)
+- 2181 (Zookeeper)
+- 8081 (Flink JobManager)
 
 To customize, create a `.env` file:
 
@@ -336,6 +392,10 @@ REDIS_INSIGHT_PORT=8002
 ELASTICSEARCH_PORT=9201
 KIBANA_PORT=5602
 POSTGRES_PORT=5433
+KAFKA_PORT=9092
+KAFKA_EXTERNAL_PORT=9093
+ZOOKEEPER_PORT=2181
+FLINK_JM_PORT=8081
 ```
 
 ### Services not healthy
@@ -374,7 +434,12 @@ npm run reset
 
 # Or reset specific technology
 npm run reset:redis
+npm run reset:postgres
+npm run reset:dynamodb
 npm run reset:elasticsearch
+npm run reset:kafka
+npm run reset:cassandra
+npm run reset:flink
 ```
 
 ## Learning Path
@@ -383,41 +448,61 @@ npm run reset:elasticsearch
 1. Start with Redis Basics to understand core data structures
 2. Move to Cache to see practical application
 3. Try Distributed Lock to understand coordination
-4. Explore Elasticsearch Basics for search fundamentals
-5. Explore other patterns based on interest
+4. Explore PostgreSQL Basics to understand SQL fundamentals
+5. Explore Elasticsearch Basics for search fundamentals
+6. Explore other patterns based on interest
 
 **For interview prep:**
 1. Run all Redis examples to understand distributed patterns
-2. Run all Elasticsearch examples to understand search patterns
-3. Read the production considerations in each README
-4. Try modifying examples to test edge cases
-5. Practice explaining tradeoffs out loud
-6. Review the technology READMEs for interview context
+2. Run all PostgreSQL examples to understand SQL patterns
+3. Run all Elasticsearch examples to understand search patterns
+4. Explore Kafka and Flink examples to understand stream processing
+5. Read the production considerations in each README
+6. Try modifying examples to test edge cases
+7. Practice explaining tradeoffs out loud
+8. Review the technology READMEs for interview context
 
 **For building systems:**
 1. Understand when NOT to use each pattern
 2. Pay attention to failure modes
 3. Consider the alternatives mentioned
 4. Think about how patterns compose
-5. Check RedisInsight to visualize data structures
+5. Check RedisInsight, Kibana, DynamoDB Admin, and Cassandra Web to visualize data
+6. Use Flink JobManager UI (http://localhost:8081) to monitor stream processing jobs
+
+**Stream processing path:**
+1. Start with Kafka Basics to understand message streaming
+2. Learn Kafka Partitioning for scalability and ordering
+3. Move to Flink Basics to process streams with transformations
+4. Explore Flink Stateless Operators for data manipulation
+5. Study Flink Stateful Processing for windowing and aggregations
 
 ## Why This Exists
 
-System design interviews require depth, not breadth. Instead of knowing a little about many technologies, you're better off deeply understanding a few versatile ones. Redis and Elasticsearch are incredibly versatile and appear in countless system design scenarios - caching, distributed coordination, full-text search, analytics, and more.
+System design interviews require depth, not breadth. Instead of knowing a little about many technologies, you're better off deeply understanding a few versatile ones. This project covers core technologies that appear in most distributed systems:
+
+- **Redis** - Cache, locks, pub/sub, and more versatile patterns
+- **PostgreSQL** - Relational data, transactions, and SQL optimization
+- **DynamoDB** - NoSQL key-value store, single-table design
+- **Elasticsearch** - Full-text search, analytics, geospatial queries
+- **Kafka** - Message streaming and event-driven architectures
+- **Cassandra** - Wide-column NoSQL, high availability, write-heavy workloads
+- **Flink** - Stateful stream processing and real-time analytics
 
 This project lets you:
 - Actually run the patterns instead of just reading about them
-- See the data with RedisInsight and Kibana
+- See the data with RedisInsight, Kibana, DynamoDB Admin, Cassandra Web, and Flink JobManager UI
 - Experiment with edge cases
 - Build muscle memory for interviews
+- Understand how technologies compose together
 
 Running code beats reading slides.
 
 ## Contributing
 
 This is an educational project. Contributions welcome for:
-- New examples for existing technologies
-- New technologies (Kafka, PostgreSQL, etc.)
+- New examples for existing technologies (Redis, PostgreSQL, DynamoDB, Elasticsearch, Kafka, Cassandra, Flink)
+- New technologies
 - Improved explanations
 - Bug fixes
 

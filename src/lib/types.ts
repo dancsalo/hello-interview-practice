@@ -26,6 +26,7 @@ export interface Example<TClient = RedisClientType> {
 export type RedisExample = Example<RedisClientType>;
 export type PostgreSQLExample = Example<Client>;
 export type KafkaExample = Example<any>;
+export type FlinkExample = Example<any>;
 export type CassandraExample = Example<import('cassandra-driver').Client>;
 
 export interface DynamoDBClients {
@@ -34,6 +35,20 @@ export interface DynamoDBClients {
 }
 
 export type DynamoDBExample = Example<DynamoDBClients>;
+
+export type FlinkJobStatusType = 'CREATED' | 'RUNNING' | 'FINISHED' | 'FAILED' | 'CANCELED';
+
+export interface FlinkJobSubmission {
+  jobId: string;
+  status: FlinkJobStatusType;
+}
+
+export interface FlinkJobStatus {
+  jobId: string;
+  status: FlinkJobStatusType;
+  startTime: number;
+  endTime?: number;
+}
 
 export interface TechnologyClient {
   connect(): Promise<void>;

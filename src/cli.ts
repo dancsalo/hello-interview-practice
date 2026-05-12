@@ -333,6 +333,10 @@ class CLI {
           value: 'dynamodb',
         },
         {
+          name: '🔍 Elasticsearch (10 examples)',
+          value: 'elasticsearch',
+        },
+        {
           name: '📨 Kafka (2 examples)',
           value: 'kafka',
         },
@@ -341,8 +345,8 @@ class CLI {
           value: 'cassandra',
         },
         {
-          name: '🔍 Elasticsearch (10 examples)',
-          value: 'elasticsearch',
+          name: '🌊 Flink - Event Stream Processing (3 examples in Phase 1)',
+          value: 'flink',
         },
         {
           name: '❌ Exit',
@@ -904,6 +908,9 @@ class CLI {
                 process.exit(0);
             }
           }
+        } else if (technology === 'flink') {
+          const { runFlinkMenu } = await import('./technologies/flink/index.js');
+          await runFlinkMenu();
         }
       }
     } catch (error) {
