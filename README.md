@@ -37,6 +37,7 @@ That's it! The CLI will guide you through running examples for each technology.
 - ✅ **Elasticsearch** (10 examples) - Full-text search, geospatial, aggregations, complex queries, and more
 - ✅ **Kafka** (2 examples) - Event streaming, partitioning, message ordering
 - ✅ **Cassandra** (10 examples) - Wide-column NoSQL, partitioning, replication, data modeling, real-world patterns
+- ✅ **ZooKeeper** (8 examples) - Coordination, leader election, distributed locks, service discovery, configuration
 - ✅ **Flink** (3 examples in Phase 1, 10 total planned) - Stateful stream processing with event-time semantics
 
 Each technology includes multiple examples demonstrating real-world patterns from basic concepts to production considerations.
@@ -81,6 +82,7 @@ hello-interview-practice/
 │       ├── elasticsearch/      # Elasticsearch examples (10)
 │       ├── kafka/              # Kafka examples (2)
 │       ├── cassandra/          # Cassandra examples (10)
+│       ├── zookeeper/          # ZooKeeper examples (8)
 │       └── flink/              # Flink examples (3 in Phase 1, 10 total planned)
 ├── scripts/
 │   ├── test-all-examples.ts       # Run all integration tests
@@ -90,6 +92,7 @@ hello-interview-practice/
 │   ├── test-elasticsearch-examples.ts # Test Elasticsearch examples
 │   ├── test-kafka-examples.ts     # Test Kafka examples
 │   ├── test-cassandra-examples.ts # Test Cassandra examples
+│   ├── test-zookeeper-examples.ts # Test ZooKeeper examples
 │   ├── test-flink-examples.ts     # Test Flink examples
 │   ├── reset-redis.ts             # Reset Redis data
 │   ├── reset-postgres.ts          # Reset PostgreSQL data
@@ -97,6 +100,7 @@ hello-interview-practice/
 │   ├── reset-elasticsearch.ts     # Reset Elasticsearch data
 │   ├── reset-kafka.ts             # Reset Kafka data
 │   ├── reset-cassandra.ts         # Reset Cassandra data
+│   ├── reset-zookeeper.ts         # Reset ZooKeeper data
 │   ├── reset-flink.ts             # Reset Flink data
 │   └── reset-all.ts               # Reset all services
 ├── docs/superpowers/           # Technology documentation
@@ -108,13 +112,14 @@ hello-interview-practice/
 ```bash
 npm start                    # Launch interactive CLI
 npm run dev                  # Development mode with watch
-npm test                     # Test all examples (Redis, PostgreSQL, DynamoDB, Elasticsearch, Kafka, Cassandra, Flink)
+npm test                     # Test all examples (Redis, PostgreSQL, DynamoDB, Elasticsearch, Kafka, Cassandra, ZooKeeper, Flink)
 npm run test:redis           # Test Redis examples only
 npm run test:postgres        # Test PostgreSQL examples only
 npm run test:dynamodb        # Test DynamoDB examples only
 npm run test:elasticsearch   # Test Elasticsearch examples only
 npm run test:kafka           # Test Kafka examples only
 npm run test:cassandra       # Test Cassandra examples only
+npm run test:zookeeper       # Test ZooKeeper examples only
 npm run test:flink           # Test Flink examples only
 npm run reset                # Reset all service data
 npm run reset:redis          # Reset only Redis data
@@ -123,6 +128,7 @@ npm run reset:dynamodb       # Reset only DynamoDB data
 npm run reset:elasticsearch  # Reset only Elasticsearch data
 npm run reset:kafka          # Reset only Kafka topics
 npm run reset:cassandra      # Reset only Cassandra data
+npm run reset:zookeeper      # Reset only ZooKeeper data
 npm run reset:flink          # Reset only Flink data
 npm run docker:up            # Start Docker services
 npm run docker:down          # Stop Docker services
@@ -319,6 +325,30 @@ Each example includes:
 
 See `src/technologies/flink/README.md` for more details.
 
+## ZooKeeper Examples
+
+The ZooKeeper technology includes 8 comprehensive examples:
+
+1. **Basics** - ZNode types (persistent, ephemeral, sequential), CRUD operations
+2. **Watches** - Change notifications, data/child/existence watches, one-time triggers
+3. **Configuration Management** - Centralized config, real-time propagation, versioning
+4. **Service Discovery** - Registration with ephemeral nodes, automatic failure detection
+5. **Leader Election** - Sequential ephemeral pattern, watching predecessor, automatic failover
+6. **Distributed Locks** - FIFO lock acquisition, deadlock prevention, fencing tokens
+7. **Session Management** - Session lifecycle, connection loss vs expiration, recovery patterns
+8. **Ensemble & Consensus** - ZAB protocol, quorum-based writes, fault tolerance
+
+Each example includes:
+- What it demonstrates
+- Why you'd use this pattern
+- How it works
+- Key ZooKeeper operations
+- Production considerations
+- Comparison with alternatives (etcd, Consul, Redis)
+- Further reading
+
+See `src/technologies/zookeeper/README.md` for more details.
+
 ## Services
 
 ### Redis Stack
@@ -342,6 +372,11 @@ See `src/technologies/flink/README.md` for more details.
 - **Port**: 8000
 - **UI**: dynamodb-admin at http://localhost:8004
 - **Image**: amazon/dynamodb-local (official AWS image)
+
+### ZooKeeper
+- **Port**: 2181
+- **Image**: confluentinc/cp-zookeeper:7.5.0
+- **Session Timeout**: 10 seconds (configurable via ZOOKEEPER_SESSION_TIMEOUT)
 
 ### Kafka
 - **Port**: 9092 (Broker)
@@ -380,8 +415,12 @@ Services use these ports by default:
 - 9200 (Elasticsearch)
 - 5601 (Kibana)
 - 5433 (PostgreSQL)
+- 8000 (DynamoDB)
+- 8004 (DynamoDB Admin)
+- 9042 (Cassandra)
+- 8003 (Cassandra Web)
+- 2181 (ZooKeeper)
 - 9092, 9093 (Kafka)
-- 2181 (Zookeeper)
 - 8081 (Flink JobManager)
 
 To customize, create a `.env` file:
@@ -392,10 +431,14 @@ REDIS_INSIGHT_PORT=8002
 ELASTICSEARCH_PORT=9201
 KIBANA_PORT=5602
 POSTGRES_PORT=5433
+DYNAMODB_PORT=8001
+DYNAMODB_ADMIN_PORT=8005
+CASSANDRA_PORT=9043
+CASSANDRA_WEB_PORT=8005
+ZOOKEEPER_PORT=2182
 KAFKA_PORT=9092
 KAFKA_EXTERNAL_PORT=9093
-ZOOKEEPER_PORT=2181
-FLINK_JM_PORT=8081
+FLINK_JM_PORT=8082
 ```
 
 ### Services not healthy
@@ -439,6 +482,7 @@ npm run reset:dynamodb
 npm run reset:elasticsearch
 npm run reset:kafka
 npm run reset:cassandra
+npm run reset:zookeeper
 npm run reset:flink
 ```
 
@@ -457,10 +501,11 @@ npm run reset:flink
 2. Run all PostgreSQL examples to understand SQL patterns
 3. Run all Elasticsearch examples to understand search patterns
 4. Explore Kafka and Flink examples to understand stream processing
-5. Read the production considerations in each README
-6. Try modifying examples to test edge cases
-7. Practice explaining tradeoffs out loud
-8. Review the technology READMEs for interview context
+5. Focus on ZooKeeper for distributed coordination questions (leader election, locks)
+6. Read the production considerations in each README
+7. Try modifying examples to test edge cases
+8. Practice explaining tradeoffs out loud
+9. Review the technology READMEs for interview context
 
 **For building systems:**
 1. Understand when NOT to use each pattern
@@ -487,6 +532,7 @@ System design interviews require depth, not breadth. Instead of knowing a little
 - **Elasticsearch** - Full-text search, analytics, geospatial queries
 - **Kafka** - Message streaming and event-driven architectures
 - **Cassandra** - Wide-column NoSQL, high availability, write-heavy workloads
+- **ZooKeeper** - Distributed coordination, leader election, configuration management
 - **Flink** - Stateful stream processing and real-time analytics
 
 This project lets you:
@@ -501,7 +547,7 @@ Running code beats reading slides.
 ## Contributing
 
 This is an educational project. Contributions welcome for:
-- New examples for existing technologies (Redis, PostgreSQL, DynamoDB, Elasticsearch, Kafka, Cassandra, Flink)
+- New examples for existing technologies (Redis, PostgreSQL, DynamoDB, Elasticsearch, Kafka, Cassandra, ZooKeeper, Flink)
 - New technologies
 - Improved explanations
 - Bug fixes

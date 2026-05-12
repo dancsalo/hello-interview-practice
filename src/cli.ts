@@ -7,10 +7,11 @@ import { ElasticsearchClient } from './technologies/elasticsearch/client.js';
 import { KafkaClient } from './technologies/kafka/client.js';
 import { CassandraClient } from './technologies/cassandra/client.js';
 import { DynamoDBClientWrapper } from './technologies/dynamodb/client.js';
+import { ZooKeeperClient } from './technologies/zookeeper/client.js';
 import { Logger } from './lib/logger.js';
 import { StepByStepLogger } from './lib/step-by-step-logger.js';
 import { DockerUtils } from './lib/docker-utils.js';
-import type { Example, RedisExample, PostgreSQLExample, CassandraExample, DynamoDBExample } from './lib/types.js';
+import type { Example, RedisExample, PostgreSQLExample, CassandraExample, DynamoDBExample, ZooKeeperExample } from './lib/types.js';
 
 // Type guard to check if an example is a RedisExample
 function isRedisExample(example: Example): example is RedisExample {
@@ -60,6 +61,9 @@ import { basicsExample as cassandraBasicsExample } from './technologies/cassandr
 import { primaryKeyDesignExample } from './technologies/cassandra/examples/02-primary-key-design/index.js';
 import { partitioningStrategyExample } from './technologies/cassandra/examples/03-partitioning-strategy/index.js';
 
+// Import all ZooKeeper examples
+import { zookeeperExamples } from './technologies/zookeeper/examples/index.js';
+
 const REDIS_EXAMPLES: RedisExample[] = [
   basicsExample,
   cacheExample,
@@ -105,6 +109,8 @@ const CASSANDRA_EXAMPLES: CassandraExample[] = [
   partitioningStrategyExample,
 ];
 
+const ZOOKEEPER_EXAMPLES: ZooKeeperExample[] = zookeeperExamples;
+
 class CLI {
   private redisClient: RedisClient;
   private postgresClient: PostgreSQLClient;
@@ -112,6 +118,7 @@ class CLI {
   private kafkaClient: KafkaClient;
   private cassandraClient: CassandraClient;
   private dynamoClient: DynamoDBClientWrapper;
+  private zookeeperClient: ZooKeeperClient;
   private logger: Logger;
   private shuttingDown = false;
 
@@ -122,6 +129,7 @@ class CLI {
     this.kafkaClient = new KafkaClient();
     this.cassandraClient = new CassandraClient();
     this.dynamoClient = new DynamoDBClientWrapper();
+    this.zookeeperClient = new ZooKeeperClient();
     this.logger = new Logger();
     this.setupSignalHandlers();
   }
@@ -147,6 +155,8 @@ class CLI {
         this.logger.success('Disconnected from Cassandra');
         await this.dynamoClient.disconnect();
         this.logger.success('Disconnected from DynamoDB');
+        await this.zookeeperClient.disconnect();
+        this.logger.success('Disconnected from ZooKeeper');
       } catch (error) {
         this.logger.error(`Error during shutdown: ${error}`);
       }
@@ -315,6 +325,26 @@ class CLI {
     }
   }
 
+  private async connectZooKeeper(): Promise<boolean> {
+    const spinner = ora('Connecting to ZooKeeper...').start();
+
+    try {
+      await this.zookeeperClient.connect();
+      const healthy = await this.zookeeperClient.healthCheck();
+
+      if (healthy) {
+        spinner.succeed('Connected to ZooKeeper');
+        return true;
+      } else {
+        spinner.fail('ZooKeeper health check failed');
+        return false;
+      }
+    } catch (error) {
+      spinner.fail(`Failed to connect to ZooKeeper: ${error}`);
+      return false;
+    }
+  }
+
   private async showTechnologyMenu(): Promise<string | null> {
     console.log();
     const technology = await select({
@@ -343,6 +373,10 @@ class CLI {
         {
           name: '💎 Cassandra (3 examples)',
           value: 'cassandra',
+        },
+        {
+          name: '🔐 ZooKeeper (8 examples)',
+          value: 'zookeeper',
         },
         {
           name: '🌊 Flink - Event Stream Processing (3 examples in Phase 1)',
@@ -450,6 +484,29 @@ class CLI {
     return selected;
   }
 
+  private async showZooKeeperExamplesMenu(): Promise<ZooKeeperExample | null> {
+    console.log();
+    const choices = ZOOKEEPER_EXAMPLES.map((example, idx) => ({
+      name: `${String(idx + 1).padStart(2, '0')}. ${example.name}`,
+      value: example,
+      description: example.description,
+    }));
+
+    choices.push({
+      name: '← Back to technologies',
+      value: null as any,
+      description: 'Return to main menu',
+    });
+
+    const selected = await select({
+      message: 'Select a ZooKeeper example:',
+      choices,
+      pageSize: 12,
+    });
+
+    return selected;
+  }
+
   private async showElasticsearchExamplesMenu(): Promise<Example | null> {
     console.log();
     const choices = ELASTICSEARCH_EXAMPLES.map((example, idx) => ({
@@ -489,6 +546,7 @@ class CLI {
 
     const selected = await select({
       message: 'Select a Cassandra example:',
+>>>>>>> origin/main
       choices,
       pageSize: 12,
     });
@@ -517,6 +575,8 @@ class CLI {
         await example.run(this.elasticsearchClient.getClient() as any, steppingLogger);
       } else if (technology === 'cassandra') {
         await example.run(this.cassandraClient.getClient() as any, steppingLogger);
+      } else if (technology === 'zookeeper') {
+        await example.run(this.zookeeperClient, steppingLogger);
       } else {
         const client = this.redisClient.getClient();
         await example.run(client, steppingLogger);
@@ -549,6 +609,8 @@ class CLI {
         this.logger.warning('You may need to reset Elasticsearch to recover.');
       } else if (technology === 'cassandra') {
         this.logger.warning('You may need to reset Cassandra to recover.');
+      } else if (technology === 'zookeeper') {
+        this.logger.warning('You may need to reset ZooKeeper to recover.');
       } else {
         this.logger.warning('You may need to reset Redis to recover.');
       }
@@ -678,6 +740,7 @@ class CLI {
                 await this.kafkaClient.disconnect();
                 await this.cassandraClient.disconnect();
                 await this.dynamoClient.disconnect();
+                await this.zookeeperClient.disconnect();
                 process.exit(0);
             }
           }
@@ -723,6 +786,7 @@ class CLI {
                 await this.kafkaClient.disconnect();
                 await this.cassandraClient.disconnect();
                 await this.dynamoClient.disconnect();
+                await this.zookeeperClient.disconnect();
                 process.exit(0);
             }
           }
@@ -813,6 +877,7 @@ class CLI {
                 await this.postgresClient.disconnect();
                 await this.elasticsearchClient.disconnect();
                 await this.kafkaClient.disconnect();
+>>>>>>> origin/main
                 process.exit(0);
             }
           }
@@ -859,6 +924,54 @@ class CLI {
                 await this.kafkaClient.disconnect();
                 await this.cassandraClient.disconnect();
                 await this.dynamoClient.disconnect();
+                await this.zookeeperClient.disconnect();
+                process.exit(0);
+            }
+          }
+        } else if (technology === 'zookeeper') {
+          // Connect to ZooKeeper
+          const zookeeperConnected = await this.connectZooKeeper();
+          if (!zookeeperConnected) {
+            this.logger.error('ZooKeeper is not available. Please check Docker services.');
+            continue;
+          }
+
+          let continueZooKeeper = true;
+
+          while (continueZooKeeper) {
+            const example = await this.showZooKeeperExamplesMenu();
+            if (!example) {
+              break;
+            }
+
+            await this.runExample(example, 'zookeeper');
+
+            const action = await this.showPostExampleMenu();
+
+            switch (action) {
+              case 'another':
+                continue;
+
+              case 'reset-redis':
+                await this.handleReset('redis');
+                continue;
+
+              case 'reset-all':
+                await this.handleReset('all');
+                continue;
+
+              case 'back':
+                continueZooKeeper = false;
+                break;
+
+              case 'exit':
+                this.logger.info('Goodbye!');
+                await this.redisClient.disconnect();
+                await this.postgresClient.disconnect();
+                await this.kafkaClient.disconnect();
+                await this.cassandraClient.disconnect();
+                await this.dynamoClient.disconnect();
+                await this.zookeeperClient.disconnect();
                 process.exit(0);
             }
           }
@@ -927,6 +1040,7 @@ class CLI {
       await this.kafkaClient.disconnect();
       await this.cassandraClient.disconnect();
       await this.dynamoClient.disconnect();
+      await this.zookeeperClient.disconnect();
     }
   }
 }

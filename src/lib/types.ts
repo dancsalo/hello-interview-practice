@@ -1,6 +1,7 @@
 import type { RedisClientType } from 'redis';
 import type { Client } from 'pg';
 import type { Producer, Consumer, Admin } from 'kafkajs';
+import type { ZooKeeperClient } from '../technologies/zookeeper/client.js';
 import type { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import type { DynamoDBDocumentClient } from '@aws-sdk/lib-dynamodb';
 
@@ -26,6 +27,7 @@ export interface Example<TClient = RedisClientType> {
 export type RedisExample = Example<RedisClientType>;
 export type PostgreSQLExample = Example<Client>;
 export type KafkaExample = Example<any>;
+export type ZooKeeperExample = Example<ZooKeeperClient>;
 export type FlinkExample = Example<any>;
 export type CassandraExample = Example<import('cassandra-driver').Client>;
 

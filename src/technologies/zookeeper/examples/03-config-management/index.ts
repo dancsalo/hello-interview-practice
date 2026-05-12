@@ -1,7 +1,5 @@
-import { Example, Logger } from '../../../../lib/types.js';
+import type { ZooKeeperExample, Logger } from '../../../../lib/types.js';
 import { ZooKeeperClient, CreateMode } from '../../client.js';
-
-type ZooKeeperExample = Example<ZooKeeperClient>;
 
 export const configManagementExample: ZooKeeperExample = {
   name: 'Configuration Management',
@@ -68,8 +66,7 @@ export const configManagementExample: ZooKeeperExample = {
           const zkClient = this.client.getClient();
           zkClient.getData(path, (event) => {
             this.logger.info(`\n🔔 ${this.name} detected config change: ${key}`);
-            this.reloadConfig(path, key)
-              .catch((err) => this.logger.info(`Watch reload failed: ${err.message}`));
+            this.reloadConfig(path, key);
           }, () => {});
         }
 
@@ -77,19 +74,25 @@ export const configManagementExample: ZooKeeperExample = {
       }
 
       private async reloadConfig(path: string, key: string): Promise<void> {
-        const { data } = await this.client.getData(path, false);
-        const oldValue = this.config.get(key);
-        const newValue = data.toString();
-        this.config.set(key, newValue);
+        try {
+          const { data } = await this.client.getData(path, false);
+          const oldValue = this.config.get(key);
+          const newValue = data.toString();
+          this.config.set(key, newValue);
 
-        this.logger.info(`${this.name} updated ${key}: ${oldValue} → ${newValue}`);
+          this.logger.info(`${this.name} updated ${key}: ${oldValue} → ${newValue}`);
 
-        const zkClient = this.client.getClient();
-        zkClient.getData(path, (event) => {
-          this.logger.info(`\n🔔 ${this.name} detected config change: ${key}`);
-          this.reloadConfig(path, key)
-            .catch((err) => this.logger.info(`Watch reload failed: ${err.message}`));
-        }, () => {});
+          const zkClient = this.client.getClient();
+          zkClient.getData(path, (event) => {
+            this.logger.info(`\n🔔 ${this.name} detected config change: ${key}`);
+            this.reloadConfig(path, key);
+          }, () => {});
+        } catch (error: any) {
+          // Node was deleted (cleanup), ignore
+          if (error.name !== 'NO_NODE') {
+            throw error;
+          }
+        }
       }
 
       getConfig(key: string): string | undefined {
@@ -106,30 +109,13 @@ export const configManagementExample: ZooKeeperExample = {
     await service3.loadConfig(basePath);
 
     logger.command('3 service instances watching config');
-    await new Promise((resolve, reject) => {
-      const zkClient = client.getClient();
-      zkClient.getData(`${basePath}/pricing_algorithm`, (event) => {
-        if (event.type === 'changed') {
-          resolve();
-        } else {
-          reject(new Error('Unexpected event type'));
-        }
-      }, () => {});
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     logger.step('Step 3: Update config and propagate to all services');
 
     logger.command('setData /demo-ecommerce/config/pricing_algorithm "dynamic_v2"');
     await client.setData(`${basePath}/pricing_algorithm`, Buffer.from('dynamic_v2'));
-    await new Promise((resolve, reject) => {
-      const zkClient = client.getClient();
-      zkClient.getData(`${basePath}/pricing_algorithm`, (event) => {
-        if (event.type === 'changed') {
-          resolve();
-        } else {
-          reject(new Error('Unexpected event type'));
-        }
-      }, () => {});
-    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     logger.assert(service1.getConfig('pricing_algorithm') === 'dynamic_v2', 'Service 1 updated');
     logger.assert(service2.getConfig('pricing_algorithm') === 'dynamic_v2', 'Service 2 updated');
@@ -168,16 +154,7 @@ export const configManagementExample: ZooKeeperExample = {
 
     logger.command('setData /demo-ecommerce/config/maintenance_mode "true"');
     await client.setData(`${basePath}/maintenance_mode`, Buffer.from('true'));
-    await new Promise((resolve, reject) => {
-      const zkClient = client.getClient();
-      zkClient.getData(`${basePath}/maintenance_mode`, (event) => {
-        if (event.type === 'changed') {
-          resolve();
-        } else {
-          reject(new Error('Unexpected event type'));
-        }
-      }, () => {});
-    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
 
     logger.assert(service2.getConfig('maintenance_mode') === 'true', 'Checkout service sees maintenance mode');
     logger.success('Emergency maintenance mode activated across all services instantly');
@@ -189,7 +166,8 @@ export const configManagementExample: ZooKeeperExample = {
     logger.success('Maintenance mode deactivated');
     logger.production('ZooKeeper enables instant system-wide switches without deploys\n');
 
-    // Cleanup
+    // Cleanup - wait a bit longer to let async watches settle
+    await new Promise((resolve) => setTimeout(resolve, 300));
     await client.deleteRecursive('/demo-ecommerce');
 
     logger.success('\n✓ Configuration management demonstrated: real-time updates, versioning, instant propagation!');
