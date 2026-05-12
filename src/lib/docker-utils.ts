@@ -35,6 +35,98 @@ export class DockerUtils {
   }
 
   /**
+   * Check Redis health
+   */
+  static async checkRedisHealth(): Promise<ServiceHealth> {
+    try {
+      const healthy = await this.waitForService('redis', 5000);
+      return {
+        name: 'Redis',
+        healthy,
+      };
+    } catch (error) {
+      return {
+        name: 'Redis',
+        healthy: false,
+      };
+    }
+  }
+
+  /**
+   * Check PostgreSQL health
+   */
+  static async checkPostgresHealth(): Promise<ServiceHealth> {
+    try {
+      const healthy = await this.waitForService('postgres', 5000);
+      return {
+        name: 'PostgreSQL',
+        healthy,
+      };
+    } catch (error) {
+      return {
+        name: 'PostgreSQL',
+        healthy: false,
+      };
+    }
+  }
+
+  /**
+   * Check Elasticsearch health
+   */
+  static async checkElasticsearchHealth(): Promise<ServiceHealth> {
+    try {
+      const response = await fetch('http://localhost:9200/_cluster/health');
+      if (!response.ok) {
+        return {
+          name: 'Elasticsearch',
+          healthy: false,
+          url: 'http://localhost:9200',
+        };
+      }
+      const data = await response.json() as { status?: string };
+      return {
+        name: 'Elasticsearch',
+        healthy: data.status !== 'red',
+        url: 'http://localhost:9200',
+      };
+    } catch (error) {
+      return {
+        name: 'Elasticsearch',
+        healthy: false,
+        url: 'http://localhost:9200',
+      };
+    }
+  }
+
+  /**
+   * Check Kibana health
+   */
+  static async checkKibanaHealth(): Promise<ServiceHealth> {
+    try {
+      const response = await fetch('http://localhost:5601/api/status');
+      if (!response.ok) {
+        return {
+          name: 'Kibana',
+          healthy: false,
+          url: 'http://localhost:5601',
+        };
+      }
+      const data = await response.json() as { status?: { overall?: { level?: string } } };
+      return {
+        name: 'Kibana',
+        healthy: data.status?.overall?.level === 'available',
+        url: 'http://localhost:5601',
+      };
+    } catch (error) {
+      return {
+        name: 'Kibana',
+        healthy: false,
+        url: 'http://localhost:5601',
+      };
+    }
+  }
+
+  /**
    * Check health of all required services
    */
   static async checkServices(): Promise<ServiceHealth[]> {
@@ -53,6 +145,15 @@ export class DockerUtils {
         url: 'http://localhost:8001',
       },
       {
+        name: 'Elasticsearch',
+        healthy: false,
+      },
+      {
+        name: 'Kibana',
+        healthy: false,
+        url: 'http://localhost:5601',
+      },
+      {
         name: 'Kafka',
         healthy: false,
       },
@@ -63,7 +164,20 @@ export class DockerUtils {
       {
         name: 'Kafka UI',
         healthy: false,
-        url: 'http://localhost:8080',
+        url: 'http://localhost:8002',
+      },
+      {
+        name: 'DynamoDB Local',
+        healthy: false,
+      },
+      {
+        name: 'DynamoDB Admin',
+        healthy: false,
+        url: 'http://localhost:8004',
+      },
+      {
+        name: 'Cassandra',
+        healthy: false,
       },
       {
         name: 'Flink JobManager',
@@ -81,9 +195,14 @@ export class DockerUtils {
       'Redis': 'redis',
       'PostgreSQL': 'postgres',
       'RedisInsight': 'redis-insight',
+      'Elasticsearch': 'elasticsearch',
+      'Kibana': 'kibana',
       'Kafka': 'kafka',
       'Zookeeper': 'zookeeper',
       'Kafka UI': 'kafka-ui',
+      'DynamoDB Local': 'dynamodb-local',
+      'DynamoDB Admin': 'dynamodb-admin',
+      'Cassandra': 'cassandra',
       'Flink JobManager': 'flink-jobmanager',
       'Flink TaskManager': 'flink-taskmanager',
     };
@@ -122,6 +241,19 @@ export class DockerUtils {
   }
 
   /**
+   * Reset Elasticsearch by deleting all indices
+   */
+  static async resetElasticsearch(): Promise<void> {
+    try {
+      await execAsync(
+        'docker exec system-design-elasticsearch curl -X DELETE "localhost:9200/*?pretty" -H "Content-Type: application/json"'
+      );
+    } catch (error) {
+      // No indices to delete or command failed - that's okay
+    }
+  }
+
+  /**
    * Reset Kafka by deleting all topics
    */
   static async resetKafka(): Promise<void> {
@@ -131,6 +263,31 @@ export class DockerUtils {
       );
     } catch (error) {
       // No topics to delete or command failed - that's okay
+    }
+  }
+
+  /**
+   * Reset Cassandra by dropping all non-system keyspaces
+   */
+  static async resetCassandra(): Promise<void> {
+    try {
+      // Get list of all keyspaces and drop non-system ones
+      const { stdout } = await execAsync(
+        `docker exec system-design-cassandra cqlsh -e "SELECT keyspace_name FROM system_schema.keyspaces;" | grep -v "^\\s*keyspace_name" | grep -v "^\\s*-" | grep -v "^\\s*$" | grep -v "system"`
+      );
+
+      const keyspaces = stdout.trim().split('\n').filter(k => k.trim());
+
+      for (const keyspace of keyspaces) {
+        const k = keyspace.trim();
+        if (k && !k.startsWith('system')) {
+          await execAsync(
+            `docker exec system-design-cassandra cqlsh -e "DROP KEYSPACE IF EXISTS ${k};"`
+          );
+        }
+      }
+    } catch (error) {
+      // No keyspaces to delete or command failed - that's okay
     }
   }
 
@@ -160,7 +317,9 @@ export class DockerUtils {
   static async resetAll(): Promise<void> {
     await this.resetRedis();
     await this.resetPostgres();
+    await this.resetElasticsearch();
     await this.resetKafka();
+    await this.resetCassandra();
     await this.resetFlink();
   }
 

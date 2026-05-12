@@ -1,0 +1,23 @@
+import { basicsExample } from './examples/01-basics/index.js';
+import { fullTextSearchExample } from './examples/02-full-text-search/index.js';
+import { geospatialSearchExample } from './examples/03-geospatial-search/index.js';
+import { aggregationsExample } from './examples/04-aggregations/index.js';
+import { complexQueriesExample } from './examples/05-complex-queries/index.js';
+import { sortingPaginationExample } from './examples/06-sorting-pagination/index.js';
+import { documentVersioningExample } from './examples/07-document-versioning/index.js';
+import { facetedSearchExample } from './examples/08-faceted-search/index.js';
+import { indexManagementExample } from './examples/09-index-management/index.js';
+import { productionPatternsExample } from './examples/10-production-patterns/index.js';
+
+export const ELASTICSEARCH_EXAMPLES = [
+  basicsExample,
+  fullTextSearchExample,
+  geospatialSearchExample,
+  aggregationsExample,
+  complexQueriesExample,
+  sortingPaginationExample,
+  documentVersioningExample,
+  facetedSearchExample,
+  indexManagementExample,
+  productionPatternsExample,
+];

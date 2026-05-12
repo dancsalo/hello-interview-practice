@@ -3,11 +3,14 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { RedisClient } from './technologies/redis/client.js';
 import { PostgreSQLClient } from './technologies/postgresql/client.js';
+import { ElasticsearchClient } from './technologies/elasticsearch/client.js';
 import { KafkaClient } from './technologies/kafka/client.js';
+import { CassandraClient } from './technologies/cassandra/client.js';
+import { DynamoDBClientWrapper } from './technologies/dynamodb/client.js';
 import { Logger } from './lib/logger.js';
 import { StepByStepLogger } from './lib/step-by-step-logger.js';
 import { DockerUtils } from './lib/docker-utils.js';
-import type { Example, RedisExample, PostgreSQLExample } from './lib/types.js';
+import type { Example, RedisExample, PostgreSQLExample, CassandraExample, DynamoDBExample } from './lib/types.js';
 
 // Type guard to check if an example is a RedisExample
 function isRedisExample(example: Example): example is RedisExample {
@@ -39,6 +42,24 @@ import { optimizationExample } from './technologies/postgresql/examples/07-optim
 import { basicsExample as kafkaBasicsExample } from './technologies/kafka/examples/01-basics/index.js';
 import { partitioningExample } from './technologies/kafka/examples/02-partitioning/index.js';
 
+// Import all DynamoDB examples
+import { basicsExample as dynamoBasicsExample } from './technologies/dynamodb/examples/01-basics/index.js';
+import { indexingExample as dynamoIndexingExample } from './technologies/dynamodb/examples/02-indexing/index.js';
+import { consistencyExample } from './technologies/dynamodb/examples/03-consistency-models/index.js';
+import { transactionsExample as dynamoTransactionsExample } from './technologies/dynamodb/examples/04-transactions/index.js';
+import { singleTableExample } from './technologies/dynamodb/examples/05-single-table-design/index.js';
+import { streamsExample } from './technologies/dynamodb/examples/06-streams/index.js';
+import { performanceExample } from './technologies/dynamodb/examples/07-performance/index.js';
+import { productionExample } from './technologies/dynamodb/examples/08-production-patterns/index.js';
+
+// Import Elasticsearch examples
+import { ELASTICSEARCH_EXAMPLES } from './technologies/elasticsearch/index.js';
+
+// Import all Cassandra examples
+import { basicsExample as cassandraBasicsExample } from './technologies/cassandra/examples/01-basics/index.js';
+import { primaryKeyDesignExample } from './technologies/cassandra/examples/02-primary-key-design/index.js';
+import { partitioningStrategyExample } from './technologies/cassandra/examples/03-partitioning-strategy/index.js';
+
 const REDIS_EXAMPLES: RedisExample[] = [
   basicsExample,
   cacheExample,
@@ -67,17 +88,40 @@ const KAFKA_EXAMPLES: Example[] = [
   partitioningExample,
 ];
 
+const DYNAMODB_EXAMPLES: DynamoDBExample[] = [
+  dynamoBasicsExample,
+  dynamoIndexingExample,
+  consistencyExample,
+  dynamoTransactionsExample,
+  singleTableExample,
+  streamsExample,
+  performanceExample,
+  productionExample,
+];
+
+const CASSANDRA_EXAMPLES: CassandraExample[] = [
+  cassandraBasicsExample,
+  primaryKeyDesignExample,
+  partitioningStrategyExample,
+];
+
 class CLI {
   private redisClient: RedisClient;
   private postgresClient: PostgreSQLClient;
+  private elasticsearchClient: ElasticsearchClient;
   private kafkaClient: KafkaClient;
+  private cassandraClient: CassandraClient;
+  private dynamoClient: DynamoDBClientWrapper;
   private logger: Logger;
   private shuttingDown = false;
 
   constructor() {
     this.redisClient = new RedisClient();
     this.postgresClient = new PostgreSQLClient();
+    this.elasticsearchClient = new ElasticsearchClient();
     this.kafkaClient = new KafkaClient();
+    this.cassandraClient = new CassandraClient();
+    this.dynamoClient = new DynamoDBClientWrapper();
     this.logger = new Logger();
     this.setupSignalHandlers();
   }
@@ -95,8 +139,14 @@ class CLI {
         this.logger.success('Disconnected from Redis');
         await this.postgresClient.disconnect();
         this.logger.success('Disconnected from PostgreSQL');
+        await this.elasticsearchClient.disconnect();
+        this.logger.success('Disconnected from Elasticsearch');
         await this.kafkaClient.disconnect();
         this.logger.success('Disconnected from Kafka');
+        await this.cassandraClient.disconnect();
+        this.logger.success('Disconnected from Cassandra');
+        await this.dynamoClient.disconnect();
+        this.logger.success('Disconnected from DynamoDB');
       } catch (error) {
         this.logger.error(`Error during shutdown: ${error}`);
       }
@@ -185,6 +235,26 @@ class CLI {
     }
   }
 
+  private async connectElasticsearch(): Promise<boolean> {
+    const spinner = ora('Connecting to Elasticsearch...').start();
+
+    try {
+      await this.elasticsearchClient.connect();
+      const healthy = await this.elasticsearchClient.healthCheck();
+
+      if (healthy) {
+        spinner.succeed('Connected to Elasticsearch');
+        return true;
+      } else {
+        spinner.fail('Elasticsearch health check failed');
+        return false;
+      }
+    } catch (error) {
+      spinner.fail(`Failed to connect to Elasticsearch: ${error}`);
+      return false;
+    }
+  }
+
   private async connectKafka(): Promise<boolean> {
     const spinner = ora('Connecting to Kafka...').start();
 
@@ -205,6 +275,46 @@ class CLI {
     }
   }
 
+  private async connectDynamoDB(): Promise<boolean> {
+    const spinner = ora('Connecting to DynamoDB...').start();
+
+    try {
+      await this.dynamoClient.connect();
+      const healthy = await this.dynamoClient.healthCheck();
+
+      if (healthy) {
+        spinner.succeed('Connected to DynamoDB');
+        return true;
+      } else {
+        spinner.fail('DynamoDB health check failed');
+        return false;
+      }
+    } catch (error) {
+      spinner.fail(`Failed to connect to DynamoDB: ${error}`);
+      return false;
+    }
+  }
+
+  private async connectCassandra(): Promise<boolean> {
+    const spinner = ora('Connecting to Cassandra...').start();
+
+    try {
+      await this.cassandraClient.connect();
+      const healthy = await this.cassandraClient.healthCheck();
+
+      if (healthy) {
+        spinner.succeed('Connected to Cassandra');
+        return true;
+      } else {
+        spinner.fail('Cassandra health check failed');
+        return false;
+      }
+    } catch (error) {
+      spinner.fail(`Failed to connect to Cassandra: ${error}`);
+      return false;
+    }
+  }
+
   private async showTechnologyMenu(): Promise<string | null> {
     console.log();
     const technology = await select({
@@ -215,21 +325,28 @@ class CLI {
           value: 'redis',
         },
         {
-          name: '📨 Kafka (2 examples)',
-          value: 'kafka',
-        },
-        {
           name: '🐘 PostgreSQL (7 examples)',
           value: 'postgresql',
         },
         {
-          name: '🌊 Flink - Event Stream Processing (10 examples)',
-          value: 'flink',
+          name: '⚡ DynamoDB (8 examples)',
+          value: 'dynamodb',
         },
         {
-          name: '🔍 Elasticsearch (Coming soon)',
+          name: '🔍 Elasticsearch (10 examples)',
           value: 'elasticsearch',
-          disabled: true,
+        },
+        {
+          name: '📨 Kafka (2 examples)',
+          value: 'kafka',
+        },
+        {
+          name: '💎 Cassandra (3 examples)',
+          value: 'cassandra',
+        },
+        {
+          name: '🌊 Flink - Event Stream Processing (3 examples in Phase 1)',
+          value: 'flink',
         },
         {
           name: '❌ Exit',
@@ -310,6 +427,75 @@ class CLI {
     return selected;
   }
 
+  private async showDynamoDBExamplesMenu(): Promise<DynamoDBExample | null> {
+    console.log();
+    const choices = DYNAMODB_EXAMPLES.map((example, idx) => ({
+      name: `${String(idx + 1).padStart(2, '0')}. ${example.name}`,
+      value: example,
+      description: example.description,
+    }));
+
+    choices.push({
+      name: '← Back to technologies',
+      value: null as any,
+      description: 'Return to main menu',
+    });
+
+    const selected = await select({
+      message: 'Select a DynamoDB example:',
+      choices,
+      pageSize: 12,
+    });
+
+    return selected;
+  }
+
+  private async showElasticsearchExamplesMenu(): Promise<Example | null> {
+    console.log();
+    const choices = ELASTICSEARCH_EXAMPLES.map((example, idx) => ({
+      name: `${String(idx + 1).padStart(2, '0')}. ${example.name}`,
+      value: example,
+      description: example.description,
+    }));
+
+    choices.push({
+      name: '← Back to technologies',
+      value: null as any,
+      description: 'Return to main menu',
+    });
+
+    const selected = await select({
+      message: 'Select an Elasticsearch example:',
+      choices,
+      pageSize: 12,
+    });
+
+    return selected;
+  }
+
+  private async showCassandraExamplesMenu(): Promise<CassandraExample | null> {
+    console.log();
+    const choices = CASSANDRA_EXAMPLES.map((example, idx) => ({
+      name: `${String(idx + 1).padStart(2, '0')}. ${example.name}`,
+      value: example,
+      description: example.description,
+    }));
+
+    choices.push({
+      name: '← Back to technologies',
+      value: null as any,
+      description: 'Return to main menu',
+    });
+
+    const selected = await select({
+      message: 'Select a Cassandra example:',
+      choices,
+      pageSize: 12,
+    });
+
+    return selected;
+  }
+
   private async runExample(example: Example<any>, technology: string): Promise<void> {
     console.log();
     console.log(chalk.bold.cyan('═'.repeat(70)));
@@ -324,6 +510,13 @@ class CLI {
         await example.run(this.kafkaClient as any, steppingLogger);
       } else if (technology === 'postgresql') {
         await example.run(this.postgresClient.getClient() as any, steppingLogger);
+      } else if (technology === 'dynamodb') {
+        const clients = this.dynamoClient.getClients();
+        await example.run(clients, steppingLogger);
+      } else if (technology === 'elasticsearch') {
+        await example.run(this.elasticsearchClient.getClient() as any, steppingLogger);
+      } else if (technology === 'cassandra') {
+        await example.run(this.cassandraClient.getClient() as any, steppingLogger);
       } else {
         const client = this.redisClient.getClient();
         await example.run(client, steppingLogger);
@@ -337,6 +530,11 @@ class CLI {
         const spinner = ora('Cleaning up...').start();
         await example.cleanup(client as any);
         spinner.succeed('Cleanup complete');
+      } else if (technology === 'cassandra' && example.cleanup) {
+        const client = this.cassandraClient.getClient();
+        const spinner = ora('Cleaning up...').start();
+        await example.cleanup(client as any);
+        spinner.succeed('Cleanup complete');
       }
     } catch (error) {
       console.log();
@@ -345,6 +543,12 @@ class CLI {
         this.logger.warning('You may need to reset Kafka to recover.');
       } else if (technology === 'postgresql') {
         this.logger.warning('You may need to reset the database to recover.');
+      } else if (technology === 'dynamodb') {
+        this.logger.warning('You may need to reset DynamoDB to recover.');
+      } else if (technology === 'elasticsearch') {
+        this.logger.warning('You may need to reset Elasticsearch to recover.');
+      } else if (technology === 'cassandra') {
+        this.logger.warning('You may need to reset Cassandra to recover.');
       } else {
         this.logger.warning('You may need to reset Redis to recover.');
       }
@@ -470,7 +674,10 @@ class CLI {
                 this.logger.info('Goodbye!');
                 await this.redisClient.disconnect();
                 await this.postgresClient.disconnect();
+                await this.elasticsearchClient.disconnect();
                 await this.kafkaClient.disconnect();
+                await this.cassandraClient.disconnect();
+                await this.dynamoClient.disconnect();
                 process.exit(0);
             }
           }
@@ -513,6 +720,98 @@ class CLI {
                 this.logger.info('Goodbye!');
                 await this.redisClient.disconnect();
                 await this.postgresClient.disconnect();
+                await this.kafkaClient.disconnect();
+                await this.cassandraClient.disconnect();
+                await this.dynamoClient.disconnect();
+                process.exit(0);
+            }
+          }
+        } else if (technology === 'dynamodb') {
+          // Connect to DynamoDB
+          const dynamoConnected = await this.connectDynamoDB();
+          if (!dynamoConnected) {
+            this.logger.error('DynamoDB is not available. Please check Docker services.');
+            continue;
+          }
+
+          let continueDynamo = true;
+
+          while (continueDynamo) {
+            const example = await this.showDynamoDBExamplesMenu();
+            if (!example) {
+              break;
+            }
+
+            await this.runExample(example, 'dynamodb');
+
+            const action = await this.showPostExampleMenu();
+
+            switch (action) {
+              case 'another':
+                continue;
+
+              case 'reset-redis':
+                await this.handleReset('redis');
+                continue;
+
+              case 'reset-all':
+                await this.handleReset('all');
+                continue;
+
+              case 'back':
+                continueDynamo = false;
+                break;
+
+              case 'exit':
+                this.logger.info('Goodbye!');
+                await this.redisClient.disconnect();
+                await this.postgresClient.disconnect();
+                await this.kafkaClient.disconnect();
+                await this.cassandraClient.disconnect();
+                await this.dynamoClient.disconnect();
+                process.exit(0);
+            }
+          }
+        } else if (technology === 'elasticsearch') {
+          // Connect to Elasticsearch
+          const elasticsearchConnected = await this.connectElasticsearch();
+          if (!elasticsearchConnected) {
+            continue;
+          }
+
+          let continueElasticsearch = true;
+
+          while (continueElasticsearch) {
+            const example = await this.showElasticsearchExamplesMenu();
+            if (!example) {
+              break;
+            }
+
+            await this.runExample(example, 'elasticsearch');
+
+            const action = await this.showPostExampleMenu();
+
+            switch (action) {
+              case 'another':
+                continue;
+
+              case 'reset-redis':
+                await this.handleReset('redis');
+                continue;
+
+              case 'reset-all':
+                await this.handleReset('all');
+                continue;
+
+              case 'back':
+                continueElasticsearch = false;
+                break;
+
+              case 'exit':
+                this.logger.info('Goodbye!');
+                await this.redisClient.disconnect();
+                await this.postgresClient.disconnect();
+                await this.elasticsearchClient.disconnect();
                 await this.kafkaClient.disconnect();
                 process.exit(0);
             }
@@ -558,6 +857,54 @@ class CLI {
                 await this.redisClient.disconnect();
                 await this.postgresClient.disconnect();
                 await this.kafkaClient.disconnect();
+                await this.cassandraClient.disconnect();
+                await this.dynamoClient.disconnect();
+                process.exit(0);
+            }
+          }
+        } else if (technology === 'cassandra') {
+          // Connect to Cassandra
+          const cassandraConnected = await this.connectCassandra();
+          if (!cassandraConnected) {
+            this.logger.error('Cassandra is not available. Please check Docker services.');
+            continue;
+          }
+
+          let continueCassandra = true;
+
+          while (continueCassandra) {
+            const example = await this.showCassandraExamplesMenu();
+            if (!example) {
+              break;
+            }
+
+            await this.runExample(example, 'cassandra');
+
+            const action = await this.showPostExampleMenu();
+
+            switch (action) {
+              case 'another':
+                continue;
+
+              case 'reset-redis':
+                await this.handleReset('redis');
+                continue;
+
+              case 'reset-all':
+                await this.handleReset('all');
+                continue;
+
+              case 'back':
+                continueCassandra = false;
+                break;
+
+              case 'exit':
+                this.logger.info('Goodbye!');
+                await this.redisClient.disconnect();
+                await this.postgresClient.disconnect();
+                await this.kafkaClient.disconnect();
+                await this.cassandraClient.disconnect();
+                await this.dynamoClient.disconnect();
                 process.exit(0);
             }
           }
@@ -576,7 +923,10 @@ class CLI {
     } finally {
       await this.redisClient.disconnect();
       await this.postgresClient.disconnect();
+      await this.elasticsearchClient.disconnect();
       await this.kafkaClient.disconnect();
+      await this.cassandraClient.disconnect();
+      await this.dynamoClient.disconnect();
     }
   }
 }

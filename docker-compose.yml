@@ -55,6 +55,50 @@ services:
         limits:
           memory: 256M
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: system-design-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - action.destructive_requires_name=false
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    container_name: system-design-kibana
+    ports:
+      - "${KIBANA_PORT:-5601}:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: system-design-zookeeper
@@ -118,6 +162,83 @@ services:
         limits:
           memory: 256M
 
+  dynamodb-local:
+    image: amazon/dynamodb-local:latest
+    container_name: system-design-dynamodb
+    ports:
+      - "${DYNAMODB_PORT:-8000}:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/localhost/8000' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin:latest
+    container_name: system-design-dynamodb-admin
+    ports:
+      - "${DYNAMODB_ADMIN_PORT:-8004}:8001"
+    environment:
+      - DYNAMO_ENDPOINT=http://dynamodb-local:8000
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+    depends_on:
+      dynamodb-local:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: system-design-cassandra
+    ports:
+      - "${CASSANDRA_PORT:-9042}:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: "SystemDesignCluster"
+      CASSANDRA_DC: "datacenter1"
+      CASSANDRA_ENDPOINT_SNITCH: "GossipingPropertyFileSnitch"
+      MAX_HEAP_SIZE: "512M"
+      HEAP_NEWSIZE: "128M"
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  cassandra-web:
+    image: ipushc/cassandra-web:latest
+    container_name: system-design-cassandra-web
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    ports:
+      - "${CASSANDRA_WEB_PORT:-8003}:3000"
+    environment:
+      CASSANDRA_HOST: cassandra
+      CASSANDRA_PORT: 9042
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
   flink-jobmanager:
     image: flink:1.18-scala_2.12
     container_name: system-design-flink-jobmanager
@@ -157,3 +278,5 @@ services:
 volumes:
   redis-data:
   postgres-data:
+  elasticsearch-data:
+  cassandra-data:
