@@ -16,6 +16,8 @@ export class ElasticsearchClient implements TechnologyClient {
 
     this.client = new Client({
       node: this.url,
+      requestTimeout: 120000, // 120 seconds for slow disk operations
+      maxRetries: 3,
     });
 
     // Verify connection

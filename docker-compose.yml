@@ -63,6 +63,7 @@ services:
       - xpack.security.enabled=false
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - action.destructive_requires_name=false
+      - cluster.routing.allocation.disk.threshold_enabled=false
     ports:
       - "${ELASTICSEARCH_PORT:-9200}:9200"
     volumes:
@@ -133,6 +134,7 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_HEAP_OPTS: "-Xmx1G -Xms512M"
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
       interval: 5s
@@ -142,7 +144,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 2G
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest

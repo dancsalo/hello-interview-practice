@@ -24,8 +24,21 @@ That's it! The CLI will guide you through running examples for each technology.
 
 ## Prerequisites
 
-- **Docker and Docker Compose** - All services run in containers
-- **Node.js >= 18.x** - For running the interactive examples
+- **Docker Desktop** - All services run in containers
+  - Install from [docker.com](https://www.docker.com/products/docker-desktop/)
+  - **Resource Requirements**:
+    - **Memory**: Minimum 8GB RAM allocated to Docker
+    - **Disk Space**: Minimum 20GB free in Docker virtual disk
+    - **CPUs**: 4+ cores recommended
+  - **Configure Docker Desktop**:
+    1. Open Docker Desktop → Settings → Resources
+    2. Set **Memory** to at least 8GB (16GB recommended)
+    3. Set **Disk image size** to at least 100GB
+    4. Set **CPUs** to 4 or more
+    5. Click "Apply & Restart"
+- **Docker Compose** - Included with Docker Desktop
+- **Node.js >= 18.x** - For running the interactive examples (v20.11.0+ recommended)
+  - Note: Node.js v22+ will be required starting January 2027 for AWS SDK compatibility
 
 ## What's Inside
 
@@ -543,6 +556,102 @@ This project lets you:
 - Understand how technologies compose together
 
 Running code beats reading slides.
+
+## Troubleshooting
+
+### Docker Disk Space Issues
+
+If you encounter slow performance or failures, check Docker disk usage:
+
+```bash
+# Check Docker disk usage
+docker system df
+
+# Check Elasticsearch disk space (common bottleneck)
+docker exec system-design-elasticsearch df -h /usr/share/elasticsearch/data
+```
+
+**If disk usage > 80%**, clean up Docker:
+
+```bash
+# Safe cleanup (removes unused images and containers)
+docker system prune
+
+# Aggressive cleanup (removes everything not currently running)
+# WARNING: This will delete all stopped containers and unused images
+docker system prune -a --volumes
+```
+
+**Increase Docker Desktop disk size:**
+1. Open Docker Desktop → Settings → Resources
+2. Increase "Disk image size" to 150GB+
+3. Click "Apply & Restart"
+
+### Container Issues
+
+**Check service health:**
+```bash
+docker ps --format "table {{.Names}}\t{{.Status}}"
+```
+
+**View logs for a specific service:**
+```bash
+docker logs system-design-kafka
+docker logs system-design-elasticsearch
+```
+
+**Restart a specific service:**
+```bash
+docker-compose restart kafka
+```
+
+**Full restart (if services are unhealthy):**
+```bash
+docker-compose down
+docker-compose up -d
+```
+
+### Test Failures
+
+**Run individual technology tests:**
+```bash
+npm run test:redis
+npm run test:postgres
+npm run test:kafka
+# etc.
+```
+
+**Check for missing dependencies:**
+```bash
+npm install
+```
+
+### Port Conflicts
+
+If you see "port already allocated" errors:
+
+```bash
+# Check what's using a port (e.g., 9092 for Kafka)
+lsof -i :9092
+
+# Either stop the conflicting process or change the port in .env:
+cp .env.example .env
+# Edit .env and change the port number
+```
+
+### Performance Issues
+
+**Memory pressure:**
+- Increase Docker memory allocation (Settings → Resources → Memory)
+- Minimum: 8GB, Recommended: 16GB
+
+**Elasticsearch slow:**
+- Usually caused by low disk space (needs 20%+ free)
+- Run `docker system prune -a --volumes` to free space
+
+**Kafka restart loop:**
+- Check memory allocation (needs at least 2GB)
+- View logs: `docker logs system-design-kafka`
 
 ## Contributing
 
