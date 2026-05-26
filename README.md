@@ -1,4 +1,4 @@
-# System Design Technology Examples
+# System Architecture Stack Components
 
 An interactive learning platform for mastering system design technologies through hands-on examples. Built for students preparing for system design interviews who want to go beyond theory and actually run the patterns they're learning about.
 
